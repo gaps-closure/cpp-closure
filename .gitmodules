@@ -1,4 +1,4 @@
-[submodule "svf"]
-	path = svf
-	url = ../svf
+[submodule "build/capo/svf"]
+	path = build/capo/svf
+	url = ../svf.git
 	branch = develop
