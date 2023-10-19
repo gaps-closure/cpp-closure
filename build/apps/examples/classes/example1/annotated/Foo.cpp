@@ -26,7 +26,7 @@ public:
   
   int getValue()
   {
-    return this->a;
+    return a;
   }
 
   Foo() {
@@ -43,4 +43,5 @@ int main(int argc, char **argv)
   Bar bar = Bar();
   int ret = foo.getValue() + bar.getValue();
   printf("Result is: %d\n", ret);
+  return 0;
 }
