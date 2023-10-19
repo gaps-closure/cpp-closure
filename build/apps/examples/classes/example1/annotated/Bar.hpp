@@ -15,15 +15,15 @@
     {"remotelevel":"orange", \
      "direction": "bidirectional", \
      "guarddirective": { "operation": "allow"}, \
-     "argtaints": [], \
+     "argtaints": [?this?], \
      "codtaints": ["PURPLE_SHAREABLE", "TAG_RESPONSE_XD_Bar_getValue"], \
      "rettaints": ["PURPLE_SHAREABLE"] \
     }, \
     {"remotelevel":"purple", \
      "direction": "bidirectional", \
      "guarddirective": { "operation": "allow"}, \
-     "argtaints": [], \
-     "codtaints": ["PURPLE_SHAREABLE", "TAG_RESPONSE_XD_Bar_getValue"], \
+     "argtaints": [?this?], \
+     "codtaints": ["PURPLE_SHAREABLE"] \
      "rettaints": ["PURPLE_SHAREABLE"] \
     } \
   ] }
@@ -34,14 +34,14 @@
      "direction": "bidirectional", \
      "guarddirective": { "operation": "allow"}, \
      "argtaints": [], \
-     "codtaints": ["PURPLE_SHAREABLE", "TAG_RESPONSE_XD_Bar_getValue"], \
+     "codtaints": ["PURPLE_SHAREABLE", "TAG_RESPONSE_XD_Bar_Bar"], \
      "rettaints": ["PURPLE_SHAREABLE"] \
     }, \
     {"remotelevel":"purple", \
      "direction": "bidirectional", \
      "guarddirective": { "operation": "allow"}, \
      "argtaints": [], \
-     "codtaints": ["PURPLE_SHAREABLE", "TAG_RESPONSE_XD_Bar_getValue"], \
+     "codtaints": ["PURPLE_SHAREABLE"], \
      "rettaints": ["PURPLE_SHAREABLE"] \
     } \
   ] }
