@@ -1,4 +1,5 @@
 #include "Parent.hpp"
+#include "remote/ClosureRemoteHalMaster.hpp"
 
 // global in Orange
 int global_oid = 1;
@@ -12,16 +13,13 @@ private:
 public:
   Extra() {
     oid = global_oid++;
-    // - call to serialize a constructor call
-    // - serialize and send it to Purple
+  ClosureRemoteHalMaster::instantiateExtra();
   }
 
   // @PurpleOrangeCallable
   int getValue() {
-    // - call to serialize a method call
-    // - serialize and send it to Purple
-    // - return the value
-    // return lib(oid, method_name, vector<args>)
+    ClosureRemoteHalMaster::invokeExtraGetValue(oid);
+
     return 0; // TODO
   }
 };
