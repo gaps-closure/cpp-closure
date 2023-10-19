@@ -1,21 +1,24 @@
 syntax = "proto3";
 
-package provision;
+package closure;
 
 message ClosureMessage {
   oneof msg {
-    ExtraConstructor extraConstructor = 1;
-    ExtraGetValue extraGetValue = 2;
-    ExtraGetValueRet extraGetValueRet = 3;
+    ExtraConstructor extra_constructor = 1;
+    ExtraGetValue extra_getValue = 2;
+    ExtraGetValueRet extra_getValue_ret = 3;
   } 
 }
 
 message ExtraConstructor {
+  uint32 oid = 1;
 }
 
 message ExtraGetValue {
+  uint32 oid = 1;
 }
 
 message ExtraGetValueRet {
-  int32 value = 1;
+  uint32 oid = 1;
+  int32 value = 2;
 }
