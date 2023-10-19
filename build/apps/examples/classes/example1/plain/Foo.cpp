@@ -3,10 +3,12 @@
 
 #include "Bar.hpp"
 
+
+
 class Foo
 {
 public:
-  //ORANGE
+  
   int a;
 
   int getValue()
