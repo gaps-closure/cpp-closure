@@ -1,0 +1,159 @@
+{
+  "source_path": "/workspaces/capo/C++/example1/src/exampl1",
+  "enclaves": [
+    "orange_E",
+    "purple_E"
+  ],
+  "levels": [
+    "orange",
+    "purple"
+  ],
+  "functions": [
+    {
+      "name": "get_sink_socket",
+      "level": "red",
+      "enclave": "red_E",
+      "line": 314
+    },
+    {
+      "name": "update_sink",
+      "level": "red",
+      "enclave": "red_E",
+      "line": 400
+    },
+    {
+      "name": "sanitize",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 414
+    },
+    {
+      "name": "pop_source_and_update_sink",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 423
+    },
+    {
+      "name": "shutdown_sink",
+      "level": "red",
+      "enclave": "red_E",
+      "line": 477
+    },
+    {
+      "name": "main",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 540
+    },
+    {
+      "name": "init_buffer",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 205
+    },
+    {
+      "name": "get_source_socket",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 279
+    },
+    {
+      "name": "start_recv_thread",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 390
+    },
+    {
+      "name": "shutdown_source",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 460
+    },
+    {
+      "name": "source_receive",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 357
+    },
+    {
+      "name": "split",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 350
+    },
+    {
+      "name": "enqueue",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 237
+    },
+    {
+      "name": "tail",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 187
+    },
+    {
+      "name": "tail_len",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 195
+    },
+    {
+      "name": "init_lock",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 199
+    },
+    {
+      "name": "head",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 183
+    },
+    {
+      "name": "head_len",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 191
+    },
+    {
+      "name": "pop",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 262
+    },
+    {
+      "name": "inhint",
+      "level": "red",
+      "enclave": "red_E",
+      "line": 395
+    },
+    {
+      "name": "print_details",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 216
+    },
+    {
+      "name": "display",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 225
+    },
+    {
+      "name": "run_tests",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 487
+    }
+  ],
+  "global_scoped_vars": [
+    {
+      "name": "circ_buff",
+      "level": "yellow",
+      "enclave": "yellow_E",
+      "line": 173
+    }
+  ]
+}

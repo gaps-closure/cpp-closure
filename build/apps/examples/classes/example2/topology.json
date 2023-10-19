@@ -1,0 +1,86 @@
+{
+  "source_path": "/workspaces/capo/C++/example1/src/exampl1",
+  "enclaves": [
+    {
+      "name": "Purple_E",
+      "level":"purple",
+      "assignedClasses": [
+        "Parent",
+        "Extra"
+      ]
+    },
+    {
+      "name": "Orange_E",
+      "level":"orange",
+      "assignedClasses": [
+        "Parent",
+        "Example1"
+      ]
+    }
+  ],
+  "levels": [
+    "orange",
+    "purple"
+  ],
+  "entry": {
+    "mainClass": "",
+    "filepath": "./example1/Example1.cpp"
+  },  
+  "functions": [
+    {
+      "name": "main",
+      "level": "orange",
+      "enclave": "Orange_E",
+      "line": 540
+    }
+  ],
+  "global_scoped_vars": [
+    {
+      "name": "",
+      "level": "",
+      "enclave": "",
+      "line": 173
+    }
+  ],
+  "jar":"",
+  "cuts":[
+     {
+        "callee":{
+           "level":"purple",
+           "type":"Extra"
+        },
+        "allowedCallers":[
+           {
+              "level":"orange",
+              "type":"Example1"
+           }
+        ],
+        "methodSignature":{
+           "parameterTypes":[
+           ],
+           "fqcn":"Extra",
+           "name":"getValue",
+           "returnType":"int"
+        }
+     },
+     {
+        "callee":{
+           "level":"purple",
+           "type":"Extra"
+        },
+        "allowedCallers":[
+           {
+              "level":"orange",
+              "type":"Example1"
+           }
+        ],
+        "methodSignature":{
+           "parameterTypes":[
+           ],
+           "fqcn":"Extra",
+           "name":"Extra",
+           "returnType":"Extra"
+        }
+     }
+  ]
+}
