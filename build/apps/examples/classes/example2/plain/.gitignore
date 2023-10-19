@@ -4,3 +4,4 @@ generated/serialization
 a.out
 *.ll
 example2.pb.*
+remote

@@ -13,14 +13,12 @@ private:
 public:
   Extra() {
     oid = global_oid++;
-  ClosureRemoteHalMaster::instantiateExtra();
+    ClosureRemoteHalMaster::instantiateExtra();
   }
 
   // @PurpleOrangeCallable
   int getValue() {
-    ClosureRemoteHalMaster::invokeExtraGetValue(oid);
-
-    return 0; // TODO
+    return ClosureRemoteHalMaster::invokeExtraGetValue(oid);
   }
 };
 
