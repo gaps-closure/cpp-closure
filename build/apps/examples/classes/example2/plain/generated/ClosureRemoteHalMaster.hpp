@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 
-#include "../example2.pb.h"
-#include "../../Extra.hpp"
+#include "example2.pb.h"
+#include "Extra.hpp"
 
 using namespace std;
 
@@ -17,7 +17,7 @@ private:
     static int nextOid;
 
 public:
-    static void instantiateExtra() { /// int oid, String fqcn, Class<?>[] argTypes, Object[] args) {
+    static int instantiateExtra() { /// int oid, String fqcn, Class<?>[] argTypes, Object[] args) {
         uint32_t oid = nextOid++;
 
         closure::ClosureMessage message;
@@ -37,6 +37,8 @@ public:
         // HalZmq halzmq = new HalZmq(outUri, inUri, outTag);
         // halzmq.xdc_asyn_send((char *)payload[0], outTag);
         // halzmq.shutdown();
+
+        return oid;
     }
     
     static int invokeExtraGetValue(int oid) {

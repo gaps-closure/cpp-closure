@@ -9,7 +9,7 @@ private:
   // @PurpleOrangeConstructable
 public:
   Extra() {
-    this->a2LUE = 42;
+    a2LUE = 42;
   }
 
   // @PurpleOrangeCallable

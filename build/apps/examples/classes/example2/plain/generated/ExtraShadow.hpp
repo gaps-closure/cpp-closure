@@ -1,8 +1,5 @@
 #include "Parent.hpp"
-#include "remote/ClosureRemoteHalMaster.hpp"
-
-// global in Orange
-int global_oid = 1;
+#include "ClosureRemoteHalMaster.hpp"
 
 // This is Extra's shadow 
 class Extra : public Parent
@@ -12,8 +9,7 @@ private:
 
 public:
   Extra() {
-    oid = global_oid++;
-    ClosureRemoteHalMaster::instantiateExtra();
+    oid = ClosureRemoteHalMaster::instantiateExtra();
   }
 
   // @PurpleOrangeCallable

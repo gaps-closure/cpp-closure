@@ -1,7 +1,7 @@
 #include <string>
 
 #include "example2.pb.h"
-#include "../Extra.hpp"
+#include "Extra.hpp"
 
 using namespace std;
 
