@@ -1,5 +1,5 @@
 {
-  "source_path": "/workspaces/capo/C++/example1/src/exampl1",
+  "source_path": "example2/plain/exampl2",
   "enclaves": [
     {
       "name": "Purple_E",
@@ -14,7 +14,7 @@
       "level":"orange",
       "assignedClasses": [
         "Parent",
-        "Example1"
+        "Example2"
       ]
     }
   ],
@@ -24,7 +24,7 @@
   ],
   "entry": {
     "mainClass": "",
-    "filepath": "./example1/Example1.cpp"
+    "filepath": "./example2/plain/Example2.cpp"
   },  
   "functions": [
     {

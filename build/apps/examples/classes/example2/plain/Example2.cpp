@@ -9,7 +9,7 @@ using annotate = T;
 
 #define ORANGE 1
 
-class Example1
+class Example2
 {
 private:
   Extra extra;
@@ -18,19 +18,17 @@ public:
   // @OrangeShareable
   annotate<int, ORANGE> myConstant;
 
-  int getValue()
-  {
+  int getValue() {
     return this->extra.getValue();
   }
 
-  Example1() : extra()
-  {
+  Example2() : extra() {
   }
 };
 
 // @OrangeMain
 int main(int argc, char **argv)
 {
-  Example1 e;
+  Example2 e;
   printf("Hello Example 1: %d\n", e.getValue());
 }
