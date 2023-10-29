@@ -1,0 +1,35 @@
+{
+"gedl": [
+	{
+		"caller": "orange",
+		"callee": "purple",
+		"calls": [
+			{
+				"func":		"extraconstructor",
+				"return":	{},
+				"clelabel":	"XDLINKAGE_EXTRA_CONSTRUCTOR",
+				"params": [
+				],
+				"occurs": [
+					{"file": "/workspaces/build/apps/examples/classes/example2/./divvied-working/orange/Example2.cpp", "lines": [67]}
+				]
+			}
+		]
+	},
+	{
+		"caller": "orange",
+		"callee": "purple",
+		"calls": [
+			{
+				"func":		"extragetvalue",
+				"return":	{"type": "int"},
+				"clelabel":	"XDLINKAGE_EXTRA_GET_VALUE",
+				"params": [
+				],
+				"occurs": [
+					{"file": "/workspaces/build/apps/examples/classes/example2/./divvied-working/orange/Example2.cpp", "lines": [67]}
+				]
+			}
+		]
+	}
+]}

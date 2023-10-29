@@ -1,0 +1,22 @@
+struct NextRPC {
+	int mux;
+	int sec;
+	int typ;
+};
+
+struct Okay {
+	int x;
+};
+
+struct Request_ExtraConstructor {
+    unsigned long oid;
+};
+
+struct Request_ExtraGetValue {
+    unsigned long oid;
+};
+
+struct Response_EaxtraGetValueRet {
+    unsigned long oid;
+    int value;
+};
