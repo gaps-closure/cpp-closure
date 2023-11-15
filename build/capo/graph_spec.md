@@ -70,6 +70,7 @@ from the LLVM/SVF through use of the debug info.
 | Stmt.Decl        | A statement which also has a declaration                                                    | From AST |
 | Stmt.Call        | An clang statement that represents a call to a function, method, constructor or destructor. | From AST |
 | Stmt.Compound    | An clang statement that only has other statements as childern.                              | From AST |
+| Stmt.Ref         | An clang statement which holds a reference to a decl                                        | From AST |
 | Stmt.Other       | An clang statement that does not transfer control to another function.                      | From AST |
 | Stmt.Return      | A return within a given function                                                            | From AST |
 | Annotation       | A CLE annotation                                                                            | From AST |
@@ -81,7 +82,6 @@ from the LLVM/SVF through use of the debug info.
 | ----------------------------- | -------------------------------------------------------------------------------------------- | ----------- | ---------------- | -------------- |
 | Record.Field                  | Connects a record to its field                                                               | Decl.Record | Decl.Field       | From AST       |
 | Record.Method                 | Connects a record to its method                                                              | Decl.Record | Decl.Method      | From AST       |
-| Record.Method                 | Connects a record to its method                                                              | Decl.Record | Decl.Method      | From AST       |
 | Record.Constructor            | Connects a record to its constructor                                                         | Decl.Record | Decl.Constructor | From AST       |
 | Record.Destructor             | Connects a record to its destructor                                                          | Decl.Record | Decl.Destructor  | From AST       |
 | Record.Inherit                | Connects two records by inheritance relation. Type of inheritance given by a field.          | Decl.Record | Decl.Record      | From AST       |
@@ -92,6 +92,9 @@ from the LLVM/SVF through use of the debug info.
 | Control.ConstructorInvocation | A constructor call                                                                           | Stmt.Call   | Decl.Constructor | From AST       |
 | Control.DestructorInvocation  | A call to a destructor                                                                       | Stmt.Call   | Decl.Destructor  | From AST       |
 | Data.PointsTo                 | A points-to relation                                                                         | Decl        | Decl             | From AST + SVF |
+| Data.DefUse                   | A def-use relation between statements                                                        | Stmt.Decl   | Stmt.Ref         | From AST       |
 | Data.ArgPass                  | An argument pass to a call instruction                                                       | Stmt        | Decl             | From AST       |
-| Data.FieldAccess              | A field access                                                                               | Instruction | Field            | From AST       |
+| Data.Param                    | Connects a function-like object to its parameters                                            | Decl        | Decl.Param       | From AST       |
+| Data.FieldAccess              | A field access                                                                               | Stmt        | Decl.Field       | From AST       |
+| Data.Decl                     | Connects a decl statment to a decl                                                           | Stmt.Decl   | Decl             | From AST       |
 | Child                         | When a statement has a child not described by the above. Mostly used for compound statements | Stmt        | Stmt             | From AST       |

@@ -15,30 +15,38 @@ class Graph {
 public:
 
     Node& get_node(NodeID id) {
-        return nodes[id];
+        return nodes.at(id);
     }
 
     Edge& get_edge(EdgeID id) {
-        return edges[id];
+        return edges.at(id);
     }
 
     NodeID add_node(Node&& node) {
-        nodes.push_back(node);
-        size_t index = nodes.size() - 1;
-        return index; 
+        nodes.insert(std::pair<NodeID, Node>(cur_node_id, node));
+        cur_node_id++;
+        return cur_node_id - 1;
+    }
+
+    void replace_node(NodeID id, Node node) {
+        nodes.insert_or_assign(id, node);
+    }
+
+    void replace_edge(EdgeID id, Edge edge) {
+        edges.insert_or_assign(id, edge);
     }
 
     EdgeID add_edge(Edge&& edge) {
-        edges.push_back(edge);
-        size_t index = edges.size() - 1;
-        assert(nodes.find(edge.src_node()) != nodes.end());
-        assert(nodes.find(edge.dst_node()) != nodes.end());
-        return index; 
+        edges.insert(std::pair<EdgeID, Edge>(cur_edge_id, edge));
+        cur_edge_id++;
+        return cur_edge_id - 1;
     }
 
 protected:
-    std::vector<Node> nodes;
-    std::vector<Edge> edges;
+    NodeID cur_node_id;
+    EdgeID cur_edge_id;
+    std::map<NodeID, Node> nodes;
+    std::map<EdgeID, Edge> edges;
 
 };
 

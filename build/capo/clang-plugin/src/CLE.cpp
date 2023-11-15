@@ -64,17 +64,24 @@ public:
 
     bool HandleTopLevelDecl(DeclGroupRef dg) override {
         for(auto decl : dg) {
-            pg.add_top_level_decl(decl);
+            pg.add_decl(decl, true);
         }
         return true;
     }
 
 
     ~Consumer() {
-        auto tbl = pg.node_table();
+        auto ntbl = pg.node_table();
         std::ofstream node_csv;
         node_csv.open("nodes.csv");
-        tbl.output_csv(node_csv, ",", "\n");
+        ntbl.output_csv(node_csv, ",", "\n");
+        node_csv.close();
+
+        auto etbl = pg.edge_table();
+        std::ofstream edge_csv;
+        edge_csv.open("edges.csv");
+        etbl.output_csv(edge_csv, ",", "\n");
+        edge_csv.close();
     }
 };
     
