@@ -6,15 +6,23 @@ private:
 
     int baz;
 public:
-    Foo(int x) : bar(x) {
-    }
-    int get_bar() { return bar; }
+    Foo() {}
+    int get_bar(); 
 };
+
+int Foo::get_bar()
+{
+    return bar;
+}
 
 __attribute__((cle_annotate("ORANGE")))
 int foo(int x)
 {
-    Foo f(x);
+    Foo f;
+
+    __attribute__((cle_annotate("BLUE")))
+    int y;
+
     return 10 * f.get_bar();
 }
 

@@ -17,132 +17,81 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Attributes.h"
 
+#include "Table.h"
+#include "Graph.h"
+#include "PGraph.h"
+
 using namespace clang;
 
-namespace {
-struct CLEAttrInfo : public ParsedAttrInfo {
-    CLEAttrInfo() {
+namespace cle {
+struct AttrInfo : public ParsedAttrInfo {
+    AttrInfo() {
         NumArgs = 1;
         static constexpr Spelling S[] = {{ParsedAttr::AS_GNU, "cle_annotate"},
                                         {ParsedAttr::AS_C2x, "cle_annotate"},
                                         {ParsedAttr::AS_CXX11, "cle_annotate"},
                                         {ParsedAttr::AS_CXX11, "cle::annotate"}};
         Spellings = S;
-
     }
 
-    AttrHandling handleDeclAttribute(Sema &S, Decl *D,
-                                   const ParsedAttr &Attr) const override {
-
+    AttrHandling handleDeclAttribute(Sema &sema, Decl *decl, const ParsedAttr &attr) const override {
         llvm::StringRef name;
-        if(auto lit = dyn_cast<StringLiteral>(Attr.getArgAsExpr(0))) {
+        if(auto lit = dyn_cast<StringLiteral>(attr.getArgAsExpr(0))) {
             name = lit->getBytes();
         } else {
-            unsigned ID = S.getDiagnostics().getCustomDiagID(
+            unsigned id = sema.getDiagnostics().getCustomDiagID(
             DiagnosticsEngine::Error, "first argument to the 'cle_annotate'"
                                       "attribute must be a string literal");
-            S.Diag(Attr.getLoc(), ID);
+            sema.Diag(attr.getLoc(), id);
             return AttributeNotApplied;
         }
-        D->addAttr(clang::AnnotateAttr::Create(S.Context, name, AttributeCommonInfo(D->getSourceRange())));
+        decl->addAttr(clang::AnnotateAttr::Create(sema.Context, name, AttributeCommonInfo(decl->getSourceRange())));
         return AttributeApplied;
     }
 };
 
-
-
-class NamedClassVisitor : public RecursiveASTVisitor<NamedClassVisitor> {
+class Consumer : public ASTConsumer {
 private:
-    CompilerInstance &CI;
+    CompilerInstance& ci;
+    cle::pgraph::Graph pg;
 public:
 
-    NamedClassVisitor(CompilerInstance &CI) : CI(CI) {}
+    Consumer(CompilerInstance& ci) : 
+        ci(ci) {}
 
-    bool VisitCXXRecordDecl(CXXRecordDecl *decl) {
-        auto &sema = CI.getSema();
-        auto &ctx = CI.getASTContext();
-        auto thisType = ctx.getPointerType(ctx.getRecordType(decl));
+    void HandleTranslationUnit(clang::ASTContext& ctx) override {
+    }
 
-        for(auto ctor : decl->ctors()) {
-            if(!ctor->hasBody())
-                continue;
-
-            std::vector<Stmt*> stmts;
-
-            stmts.push_back(ctor->getBody());
-
-            auto loc = ctor->getLocation();
-            auto thisExpr = sema.BuildCXXThisExpr(loc, thisType, false);
-
-            for(auto field : decl->fields()) {
-                
-                auto access = 
-                    sema.BuildFieldReferenceExpr(thisExpr, true, loc, 
-                        CXXScopeSpec(), field, 
-                        DeclAccessPair::make(decl, field->getAccess()), DeclarationNameInfo());
-
-                stmts.push_back(access.get());
-
-            }
-            ctor->setBody(CompoundStmt::Create(ctx, stmts, loc, loc));
+    bool HandleTopLevelDecl(DeclGroupRef dg) override {
+        for(auto decl : dg) {
+            pg.add_top_level_decl(decl);
         }
-        decl->dumpColor();        
-        return true;
-    }
-};
-
-
-class CLEConsumer : public ASTConsumer {
-private:
-    std::unique_ptr<llvm::LLVMContext> ctx; 
-    CodeGenerator *cg; 
-    NamedClassVisitor visitor;
-public:
-
-    CLEConsumer(CompilerInstance &CI) : 
-        ctx(std::make_unique<llvm::LLVMContext>()),
-        cg(CreateLLVMCodeGen(CI.getDiagnostics(), "cle", CI.getHeaderSearchOpts(),
-            CI.getPreprocessorOpts(), CI.getCodeGenOpts(), *ctx)),
-        visitor(CI) {}
-
-    void Initialize(ASTContext &astCtx) override {
-        cg->Initialize(astCtx);
-    }
-
-    void HandleTranslationUnit(clang::ASTContext &ctx) override {
-        visitor.TraverseDecl(ctx.getTranslationUnitDecl());
-        cg->HandleTranslationUnit(ctx);
-    }
-
-    bool HandleTopLevelDecl(DeclGroupRef DG) override {
-        cg->HandleTopLevelDecl(DG);
         return true;
     }
 
 
-    ~CLEConsumer() {
-        cg->GetModule()->print(llvm::outs(), nullptr);
-        delete cg;
+    ~Consumer() {
+        auto tbl = pg.node_table();
+        std::ofstream node_csv;
+        node_csv.open("nodes.csv");
+        tbl.output_csv(node_csv, ",", "\n");
     }
 };
     
-};
 
-class CLEAction : public PluginASTAction {
+class Action : public PluginASTAction {
 protected:
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                 llvm::StringRef) override {
+    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& ci, llvm::StringRef) override {
+        return std::make_unique<Consumer>(ci);
+    }
 
-    return std::make_unique<CLEConsumer>(CI);
-  }
-
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string> &args) override {
-    return true;
-  }
+    bool ParseArgs(const CompilerInstance &ci, const std::vector<std::string> &args) override {
+        return true;
+    }
 };
 
+};
 
-static ParsedAttrInfoRegistry::Add<CLEAttrInfo> Y("cle", "cle annotator");
+static ParsedAttrInfoRegistry::Add<cle::AttrInfo> Y("cle", "cle annotator");
 
-static FrontendPluginRegistry::Add<CLEAction> X("cle", "cle annotation codegen");
+static FrontendPluginRegistry::Add<cle::Action> X("cle", "cle annotation codegen");
