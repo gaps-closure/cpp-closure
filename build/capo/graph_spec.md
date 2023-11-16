@@ -49,6 +49,17 @@
 | Record.Inherit.Virtual           | Connects two records by a virtual inheritance relation                 | Record                                 | Record                    | From AST                  |
 | Record.Virtual                   | Connects a method which virtually overrides another one in a sub class | Method.Virtual                         | Method.Virtual            | From AST                  |
 
+## Notes from 11/7 Meeting
+1. Organize functions, methods, constructors, destructors together? (so that parameters and returns will apply to both)
+2. Unclear whether we need virtual or not.
+3. Need to have abstract methods subtype?
+   - These will not have a body in the LLVM IR 
+   - Whether to to exclude this from the PDG is TBD, we're going to keep for now. 
+4. Need to include static methods 
+5. Direct and indirect (virtual) method invocation 
+6. Might make sense to subtype Record.Field/Method by whether it is static or not.  
+7. Do we need class inheritance hierarchy?
+
 
 # Alternative Graph Representation
 
