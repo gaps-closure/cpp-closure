@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Table.h"
 #include "Graph.h"
 #include "clang/AST/AST.h"
@@ -156,10 +158,14 @@ enum EdgeKind {
     RECORD_DESTRUCTOR,
     RECORD_INHERIT,
     CONTROL_ENTRY,
+    CONTROL_FUNCTION_INVOCATION,
+    CONTROL_METHOD_INVOCATION,
+    DATA_OBJECT,
     DATA_PARAM,
     DATA_DEFUSE,
     DATA_DECL,
-    CHILD,
+    DATA_ARGPASS,
+    CHILD
 };
 
 std::string edge_kind_name(EdgeKind kind); 
@@ -189,6 +195,8 @@ private:
     NodeID add_decl_stmt(DeclStmt* stmt); 
     NodeID add_return_stmt(ReturnStmt* stmt); 
     NodeID add_ref_stmt(DeclRefExpr* stmt); 
+    NodeID add_call_stmt(CallExpr* stmt); 
+    NodeID add_member_call_stmt(CXXMemberCallExpr* stmt); 
     NodeID add_other_stmt(Stmt* stmt); 
 
     std::map<NamedDecl*, NodeID> named_decls;

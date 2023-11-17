@@ -89,23 +89,24 @@ from the LLVM/SVF through use of the debug info.
 
 ## Edges
 
-| Edge Name                     | Edge Description                                                                             | Source Type | Destination Type | Notes          |
-| ----------------------------- | -------------------------------------------------------------------------------------------- | ----------- | ---------------- | -------------- |
-| Record.Field                  | Connects a record to its field                                                               | Decl.Record | Decl.Field       | From AST       |
-| Record.Method                 | Connects a record to its method                                                              | Decl.Record | Decl.Method      | From AST       |
-| Record.Constructor            | Connects a record to its constructor                                                         | Decl.Record | Decl.Constructor | From AST       |
-| Record.Destructor             | Connects a record to its destructor                                                          | Decl.Record | Decl.Destructor  | From AST       |
-| Record.Inherit                | Connects two records by inheritance relation. Type of inheritance given by a field.          | Decl.Record | Decl.Record      | From AST       |
-| Control.Return                | A function/method/constructor/destructor return                                              | Stmt.Return | Stmt.Call        | From AST       |
-| Control.Entry                 | Connects a function-like object to it's body                                                 | Decl        | Stmt             | From AST       |
-| Control.FunctionInvocation    | A direct call invocation to a C-style function                                               | Stmt.Call   | Decl.Function    | From AST       |
-| Control.MethodInvocation      | A method call                                                                                | Stmt.Call   | Decl.Method      | From AST       |
-| Control.ConstructorInvocation | A constructor call                                                                           | Stmt.Call   | Decl.Constructor | From AST       |
-| Control.DestructorInvocation  | A call to a destructor                                                                       | Stmt.Call   | Decl.Destructor  | From AST       |
-| Data.PointsTo                 | A points-to relation                                                                         | Decl        | Decl             | From AST + SVF |
-| Data.DefUse                   | A def-use relation between statements                                                        | Stmt.Decl   | Stmt.Ref         | From AST       |
-| Data.ArgPass                  | An argument pass to a call instruction                                                       | Stmt        | Decl             | From AST       |
-| Data.Param                    | Connects a function-like object to its parameters                                            | Decl        | Decl.Param       | From AST       |
-| Data.FieldAccess              | A field access                                                                               | Stmt        | Decl.Field       | From AST       |
-| Data.Decl                     | Connects a decl statment to a decl                                                           | Stmt.Decl   | Decl             | From AST       |
-| Child                         | When a statement has a child not described by the above. Mostly used for compound statements | Stmt        | Stmt             | From AST       |
+| Edge Name                     | Edge Description                                                                                   | Source Type | Destination Type | Notes          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- | ----------- | ---------------- | -------------- |
+| Record.Field                  | Connects a record to its field                                                                     | Decl.Record | Decl.Field       | From AST       |
+| Record.Method                 | Connects a record to its method                                                                    | Decl.Record | Decl.Method      | From AST       |
+| Record.Constructor            | Connects a record to its constructor                                                               | Decl.Record | Decl.Constructor | From AST       |
+| Record.Destructor             | Connects a record to its destructor                                                                | Decl.Record | Decl.Destructor  | From AST       |
+| Record.Inherit                | Connects two records by inheritance relation. Type of inheritance given by a property              | Decl.Record | Decl.Record      | From AST       |
+| Control.Return                | A function/method/constructor/destructor return                                                    | Stmt.Return | Stmt.Call        | From AST       |
+| Control.Entry                 | Connects a function-like object to it's body                                                       | Decl        | Stmt             | From AST       |
+| Control.FunctionInvocation    | A direct call invocation to a C-style function                                                     | Stmt.Call   | Decl.Function    | From AST       |
+| Control.MethodInvocation      | A method call                                                                                      | Stmt.Call   | Decl.Method      | From AST       |
+| Control.ConstructorInvocation | A constructor call                                                                                 | Stmt.Call   | Decl.Constructor | From AST       |
+| Control.DestructorInvocation  | A call to a destructor                                                                             | Stmt.Call   | Decl.Destructor  | From AST       |
+| Data.PointsTo                 | A points-to relation                                                                               | Decl        | Decl             | From AST + SVF |
+| Data.DefUse                   | A def-use relation between statements                                                              | Stmt.Decl   | Stmt.Ref         | From AST       |
+| Data.ArgPass                  | An argument pass to a call instruction                                                             | Stmt.Call   | Stmt             | From AST       |
+| Data.Object                   | Connects a method call to the object being called upon (e.g. f as in f.foo())                      | Stmt.Call   | Stmt             | From AST       |
+| Data.Param                    | Connects a function-like object to its parameters                                                  | Decl        | Decl.Param       | From AST       |
+| Data.FieldAccess              | A field access                                                                                     | Stmt        | Decl.Field       | From AST       |
+| Data.Decl                     | Connects a decl statment to a decl                                                                 | Stmt.Decl   | Decl             | From AST       |
+| Child                         | When a statement has a child not described by the above. Mostly used for compound/other statements | Stmt        | Stmt             | From AST       |

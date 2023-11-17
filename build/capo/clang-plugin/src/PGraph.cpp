@@ -51,14 +51,22 @@ std::string pgraph::edge_kind_name(EdgeKind kind) {
         return "Record.Method";
     case RECORD_INHERIT:
         return "Record.Inherit";
+    case DATA_OBJECT:
+        return "Data.Object";
     case DATA_PARAM:
         return "Data.Param";
     case DATA_DECL:
         return "Data.Decl";
     case DATA_DEFUSE:
         return "Data.DefUse";
+    case DATA_ARGPASS:
+        return "Data.ArgPass";
     case CONTROL_ENTRY:
         return "Control.Entry";
+    case CONTROL_FUNCTION_INVOCATION:
+        return "Control.FunctionInvocation";
+    case CONTROL_METHOD_INVOCATION:
+        return "Control.MethodInvocation";
     case CHILD:
         return "Child";
     default:
@@ -159,6 +167,56 @@ NodeID pgraph::Graph::add_return_stmt(ReturnStmt* stmt) {
     return id;
 }
 
+NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt) {
+    auto id = add_node(Node(StmtCall(stmt)));
+
+    if(auto decl = stmt->getDirectCallee()) {
+        NodeID fid;
+        if(named_decls.find(decl) != named_decls.end()) {
+            fid = named_decls[decl];
+        } else {
+            fid = add_function_decl(decl);
+        }
+        add_edge(Edge(id, fid, CONTROL_FUNCTION_INVOCATION));
+    }
+
+    for(auto arg : stmt->arguments()) {
+        auto aid = add_stmt(arg);
+        add_edge(Edge(id, aid, DATA_ARGPASS));
+    }
+
+    return id;
+}
+
+
+NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
+    auto id = add_node(Node(StmtCall(stmt)));
+
+    // stmt->getPreArg()
+    if(auto decl = stmt->getMethodDecl()) {
+        NodeID fid;
+        if(named_decls.find(decl) != named_decls.end()) {
+            fid = named_decls[decl];
+        } else {
+            fid = add_method_decl(decl);
+        }
+        add_edge(Edge(id, fid, CONTROL_METHOD_INVOCATION));
+    }
+
+    for(auto arg : stmt->arguments()) {
+        auto aid = add_stmt(arg);
+        add_edge(Edge(id, aid, DATA_ARGPASS));
+    }
+
+    if(auto obj = stmt->getImplicitObjectArgument()) {
+        auto oid = add_stmt(obj);
+        add_edge(Edge(id, oid, DATA_OBJECT));
+    }
+
+    return id;
+
+}
+
 
 NodeID pgraph::Graph::add_stmt(Stmt* stmt) {
     switch(stmt->getStmtClass()) {
@@ -170,6 +228,10 @@ NodeID pgraph::Graph::add_stmt(Stmt* stmt) {
             return add_return_stmt(dyn_cast<ReturnStmt>(stmt));
         case Stmt::DeclRefExprClass: 
             return add_ref_stmt(dyn_cast<DeclRefExpr>(stmt));
+        case Stmt::CallExprClass:
+            return add_call_stmt(dyn_cast<CallExpr>(stmt));
+        case Stmt::CXXMemberCallExprClass:
+            return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt));
         default:
             return add_other_stmt(stmt);
     }
@@ -293,6 +355,7 @@ std::optional<NamedDecl*> pgraph::Node::named_decl() {
             return std::nullopt;
     }
 }
+
 
 std::optional<SDecl*> pgraph::Node::as_sdecl() {
     switch(kind) {
