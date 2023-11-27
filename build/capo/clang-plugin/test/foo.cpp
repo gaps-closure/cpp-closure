@@ -1,4 +1,6 @@
-class Foo
+class Bar {};
+
+class Foo : public Bar
 { 
 private:
     __attribute__((cle_annotate("PURPLE")))
@@ -7,6 +9,7 @@ private:
     int baz;
 public:
     Foo() {}
+    ~Foo() {}
     int get_bar(); 
 };
 
@@ -21,10 +24,19 @@ int foo(int x)
     Foo f;
 
     __attribute__((cle_annotate("BLUE")))
-    int y;
+    int y = 1;
+    int z;
+    if (y) {
+        int yy = 5;
+        z = yy + 5;
+    } else {
+        z = 1;
+    }
 
-    return 10 * f.get_bar();
+    int w = f.get_bar();
+    return 10 * w;
 }
+
 
 int main()
 {

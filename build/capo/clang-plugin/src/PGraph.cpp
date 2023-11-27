@@ -4,6 +4,7 @@ using namespace clang;
 using namespace cle;
 using namespace cle::pgraph;
 
+
 std::string pgraph::node_kind_name(NodeKind kind) {
     switch(kind) {
     case DECL_VAR:
@@ -25,6 +26,8 @@ std::string pgraph::node_kind_name(NodeKind kind) {
     case STMT_COMPOUND:
         return "Stmt.Compound";
     case STMT_CALL:
+        return "Stmt.Call";
+    case STMT_CONSTRUCTOR:
         return "Stmt.Call";
     case STMT_RETURN:
         return "Stmt.Return";
@@ -65,6 +68,10 @@ std::string pgraph::edge_kind_name(EdgeKind kind) {
         return "Control.Entry";
     case CONTROL_FUNCTION_INVOCATION:
         return "Control.FunctionInvocation";
+    case CONTROL_CONSTRUCTOR_INVOCATION:
+        return "Control.ConstructorInvocation";
+    case CONTROL_DESTRUCTOR_INVOCATION:
+        return "Control.DestructorInvocation";
     case CONTROL_METHOD_INVOCATION:
         return "Control.MethodInvocation";
     case CHILD:
@@ -200,7 +207,12 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
         } else {
             fid = add_method_decl(decl);
         }
-        add_edge(Edge(id, fid, CONTROL_METHOD_INVOCATION));
+        auto node = get_node(fid);
+        if(node.kind == DECL_DESTRUCTOR) {
+            add_edge(Edge(id, fid, CONTROL_DESTRUCTOR_INVOCATION));
+        } else {
+            add_edge(Edge(id, fid, CONTROL_METHOD_INVOCATION));
+        }
     }
 
     for(auto arg : stmt->arguments()) {
@@ -218,6 +230,30 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
 }
 
 
+NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt) {
+    auto id = add_node(Node(StmtConstructor(stmt)));
+
+    NodeID cid;
+    {
+        auto decl = stmt->getConstructor();
+        if(named_decls.find(decl) != named_decls.end()) {
+            cid = named_decls[decl];
+        } else {
+            cid = add_constructor_decl(stmt->getConstructor());
+        }
+    }
+
+    add_edge(Edge(id, cid, CONTROL_CONSTRUCTOR_INVOCATION));
+
+    for(auto arg : stmt->arguments()) {
+        auto aid = add_stmt(arg);
+        add_edge(Edge(id, aid, DATA_ARGPASS));
+    }
+
+    return id;
+}
+
+
 NodeID pgraph::Graph::add_stmt(Stmt* stmt) {
     switch(stmt->getStmtClass()) {
         case Stmt::CompoundStmtClass:
@@ -230,6 +266,8 @@ NodeID pgraph::Graph::add_stmt(Stmt* stmt) {
             return add_ref_stmt(dyn_cast<DeclRefExpr>(stmt));
         case Stmt::CallExprClass:
             return add_call_stmt(dyn_cast<CallExpr>(stmt));
+        case Stmt::CXXConstructExprClass:
+            return add_constructor_call_stmt(dyn_cast<CXXConstructExpr>(stmt));
         case Stmt::CXXMemberCallExprClass:
             return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt));
         default:
@@ -265,6 +303,15 @@ NodeID pgraph::Graph::add_function_decl(FunctionDecl* decl) {
         }
 
         if(decl->hasBody()) {
+
+            // clang::CFG::BuildOptions opts;
+            // opts.AddImplicitDtors = true;
+            // opts.AddScopes = true;
+            // opts.AddTemporaryDtors = true;
+            // std::unique_ptr<clang::CFG> cfg(
+            //     clang::CFG::buildCFG(decl, decl->getBody(), ast_ctx, opts)
+            // );
+            // cfg->dump(LangOptions(), true);
             auto cid = add_stmt(decl->getBody());
             add_edge(Edge(id, cid, CONTROL_ENTRY));
         }  
@@ -274,12 +321,33 @@ NodeID pgraph::Graph::add_function_decl(FunctionDecl* decl) {
 }
 
 NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, bool top_level) {
-    auto id = add_node(Node(DeclRecord(decl, top_level)));
+
+    NodeID id; 
+    bool found_prev_decl = false;
+    for(auto redecl : decl->redecls()) {
+        if(named_decls.find(redecl) != named_decls.end()) {
+            id = named_decls[redecl];
+            auto node = get_node(id);
+            if(!node.decl_record.decl->hasDefinition() && decl->hasDefinition()) {
+                replace_node(id, Node(DeclRecord(decl)));
+            }
+            found_prev_decl = true;
+            break;
+        }
+    }
+    if(!found_prev_decl)
+        id = add_node(Node(DeclRecord(decl, top_level)));
+
+    if(!decl->hasDefinition())
+        return id;
 
     for(auto base : decl->bases()) {
-        // TODO: add inheritance relation  
-        base.getType().dump();
+        auto ty = base.getType().getTypePtr();
+        if(record_definitions.find(ty) != record_definitions.end()) {
+            add_edge(Edge(id, record_definitions[ty], RECORD_INHERIT));
+        }
     }
+    record_definitions.insert(std::pair(decl->getTypeForDecl(), id));
 
     for(auto fdecl : decl->fields()) {
         auto fid = add_field_decl(fdecl);
@@ -380,8 +448,8 @@ std::optional<SDecl*> pgraph::Node::as_sdecl() {
     }
 }
 
-Table<NodeID, std::string, std::string, std::string, bool> pgraph::Graph::node_table() {
-    Table<NodeID, std::string, std::string, std::string, bool> tbl;
+Table<NodeID, std::string, std::string, std::string, std::string> pgraph::Graph::node_table() {
+    Table<NodeID, std::string, std::string, std::string, std::string> tbl;
     for(auto [id, node] : nodes) {
         std::string name = node.qualified_name().value_or("");
         std::string nk_name = node_kind_name(node.kind);
@@ -392,11 +460,20 @@ Table<NodeID, std::string, std::string, std::string, bool> pgraph::Graph::node_t
                 annotation = attr->getAnnotation();
             }
         }
-        bool top_level = false;
-        if(auto sdecl = node.as_sdecl()) {
-            top_level = (*sdecl)->top_level;
+
+        std::optional<NodeID> ctx_id = std::nullopt;
+        if(auto decl = node.named_decl()) {
+            auto ctx = (*decl)->getDeclContext();
+            if(auto named_ctx = dyn_cast<NamedDecl>(ctx)) {
+                if(named_decls.find(named_ctx) != named_decls.end()) {
+                    ctx_id = named_decls[named_ctx];
+                }
+            }
         }
-        HetList<cle::NodeID, std::string, std::string, std::string, bool> row{id, nk_name, name, annotation, top_level}; 
+        std::string ctx_id_str;
+        if(ctx_id)
+            ctx_id_str = std::to_string(*ctx_id);
+        HetList<cle::NodeID, std::string, std::string, std::string, std::string> row{id, nk_name, name, annotation, ctx_id_str}; 
 
         tbl << row;
     }

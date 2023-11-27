@@ -22,7 +22,7 @@ public:
         return edges.at(id);
     }
 
-    NodeID add_node(Node&& node) {
+    virtual NodeID add_node(Node&& node) {
         nodes.insert(std::pair<NodeID, Node>(cur_node_id, node));
         cur_node_id++;
         return cur_node_id - 1;
@@ -43,8 +43,8 @@ public:
     }
 
 protected:
-    NodeID cur_node_id;
-    EdgeID cur_edge_id;
+    NodeID cur_node_id = 0;
+    EdgeID cur_edge_id = 0;
     std::map<NodeID, Node> nodes;
     std::map<EdgeID, Edge> edges;
 

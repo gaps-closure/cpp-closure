@@ -57,7 +57,7 @@ private:
 public:
 
     Consumer(CompilerInstance& ci) : 
-        ci(ci) {}
+        ci(ci), pg(&ci.getASTContext()) {}
 
     void HandleTranslationUnit(clang::ASTContext& ctx) override {
     }

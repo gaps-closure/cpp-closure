@@ -6,6 +6,7 @@
 #include "Graph.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/Attr.h"
+#include "clang/Analysis/CFG.h"
 
 namespace cle {
 namespace pgraph {
@@ -23,6 +24,7 @@ enum NodeKind {
     DECL_DESTRUCTOR,
     STMT_DECL,
     STMT_CALL,
+    STMT_CONSTRUCTOR,
     STMT_COMPOUND,
     STMT_RETURN,
     STMT_REF,
@@ -87,6 +89,11 @@ struct StmtCall {
     StmtCall(clang::CallExpr* stmt) : stmt(stmt) {}
 };
 
+struct StmtConstructor {
+    clang::CXXConstructExpr* stmt;
+    StmtConstructor(clang::CXXConstructExpr* stmt) : stmt(stmt) {}
+};
+
 struct StmtCompound {
     clang::CompoundStmt* stmt;
     StmtCompound(clang::CompoundStmt* stmt) : stmt(stmt) {}
@@ -122,6 +129,7 @@ public:
         DeclDestructor decl_destructor;
         StmtDecl stmt_decl;
         StmtCall stmt_call;
+        StmtConstructor stmt_cons;
         StmtCompound stmt_compound;
         StmtReturn stmt_return;
         StmtRef stmt_ref;
@@ -144,6 +152,7 @@ public:
     Node(DeclDestructor decl_destructor) : decl_destructor(decl_destructor), kind(DECL_DESTRUCTOR) {}
     Node(StmtDecl stmt_decl) : stmt_decl(stmt_decl), kind(STMT_DECL) {}
     Node(StmtCall stmt_call) : stmt_call(stmt_call), kind(STMT_CALL) {}
+    Node(StmtConstructor stmt_cons) : stmt_cons(stmt_cons), kind(STMT_CONSTRUCTOR) {}
     Node(StmtCompound stmt_compound) : stmt_compound(stmt_compound), kind(STMT_COMPOUND) {}
     Node(StmtReturn stmt_return) : stmt_return(stmt_return), kind(STMT_RETURN) {}
     Node(StmtRef stmt_ref) : stmt_ref(stmt_ref), kind(STMT_REF) {}
@@ -159,6 +168,8 @@ enum EdgeKind {
     RECORD_INHERIT,
     CONTROL_ENTRY,
     CONTROL_FUNCTION_INVOCATION,
+    CONTROL_CONSTRUCTOR_INVOCATION,
+    CONTROL_DESTRUCTOR_INVOCATION,
     CONTROL_METHOD_INVOCATION,
     DATA_OBJECT,
     DATA_PARAM,
@@ -179,11 +190,14 @@ struct Edge {
 
 class Graph : public cle::Graph<Node, Edge> {
 public:    
-    Graph() {}
+    Graph(ASTContext* ctx) : ast_ctx(ctx) { }
     NodeID add_decl(Decl* decl, bool top_level = false); 
-    Table<NodeID, std::string, std::string, std::string, bool> node_table();
+    Table<NodeID, std::string, std::string, std::string, std::string> node_table();
     Table<EdgeID, std::string, NodeID, NodeID> edge_table();
+
+    NodeID add_node(Node&& node) override;
 private:
+
     NodeID add_record_decl(CXXRecordDecl* decl, bool top_level = false); 
     NodeID add_function_decl(FunctionDecl* decl);
     NodeID add_field_decl(FieldDecl* decl); 
@@ -196,12 +210,15 @@ private:
     NodeID add_return_stmt(ReturnStmt* stmt); 
     NodeID add_ref_stmt(DeclRefExpr* stmt); 
     NodeID add_call_stmt(CallExpr* stmt); 
+    NodeID add_constructor_call_stmt(CXXConstructExpr* stmt);
     NodeID add_member_call_stmt(CXXMemberCallExpr* stmt); 
     NodeID add_other_stmt(Stmt* stmt); 
 
-    std::map<NamedDecl*, NodeID> named_decls;
 
-    NodeID add_node(Node&& node);
+    std::map<const Type*, NodeID> record_definitions;
+    std::map<NamedDecl*, NodeID> named_decls;
+    ASTContext* ast_ctx;
+
 
 };
 
