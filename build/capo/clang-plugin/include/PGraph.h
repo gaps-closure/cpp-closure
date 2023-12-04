@@ -25,6 +25,7 @@ enum NodeKind {
     STMT_DECL,
     STMT_CALL,
     STMT_CONSTRUCTOR,
+    STMT_IMPLICIT_DESTRUCTOR,
     STMT_COMPOUND,
     STMT_RETURN,
     STMT_REF,
@@ -109,6 +110,11 @@ struct StmtRef {
     StmtRef(clang::DeclRefExpr* stmt) : stmt(stmt) {}
 };
 
+struct StmtImplicitDestructor {
+    clang::CFGAutomaticObjDtor dtor;
+    StmtImplicitDestructor(clang::CFGAutomaticObjDtor dtor) : dtor(dtor) {}
+};
+
 struct StmtOther {
     clang::Stmt* stmt;
     StmtOther(clang::Stmt* stmt) : stmt(stmt) {}
@@ -130,6 +136,7 @@ public:
         StmtDecl stmt_decl;
         StmtCall stmt_call;
         StmtConstructor stmt_cons;
+        StmtImplicitDestructor stmt_implicit_dtor;
         StmtCompound stmt_compound;
         StmtReturn stmt_return;
         StmtRef stmt_ref;
@@ -142,6 +149,8 @@ public:
     std::optional<SDecl*> as_sdecl();
     std::optional<NamedDecl*> named_decl();
 
+    int64_t clang_node_id(ASTContext*);
+
     Node(DeclVar decl_var) : decl_var(decl_var), kind(DECL_VAR) {}
     Node(DeclFun decl_fun) : decl_fun(decl_fun), kind(DECL_FUN) {}
     Node(DeclRecord decl_record) : decl_record(decl_record), kind(DECL_RECORD) {}
@@ -153,6 +162,7 @@ public:
     Node(StmtDecl stmt_decl) : stmt_decl(stmt_decl), kind(STMT_DECL) {}
     Node(StmtCall stmt_call) : stmt_call(stmt_call), kind(STMT_CALL) {}
     Node(StmtConstructor stmt_cons) : stmt_cons(stmt_cons), kind(STMT_CONSTRUCTOR) {}
+    Node(StmtImplicitDestructor stmt) : stmt_implicit_dtor(stmt), kind(STMT_IMPLICIT_DESTRUCTOR) {}
     Node(StmtCompound stmt_compound) : stmt_compound(stmt_compound), kind(STMT_COMPOUND) {}
     Node(StmtReturn stmt_return) : stmt_return(stmt_return), kind(STMT_RETURN) {}
     Node(StmtRef stmt_ref) : stmt_ref(stmt_ref), kind(STMT_REF) {}
@@ -214,9 +224,15 @@ private:
     NodeID add_member_call_stmt(CXXMemberCallExpr* stmt); 
     NodeID add_other_stmt(Stmt* stmt); 
 
+    template<typename ClangDecl, typename CLENode> 
+    NodeID add_function_like(ClangDecl* decl);
+
+    void add_implicit_destructors(Decl* decl, Stmt* body);
 
     std::map<const Type*, NodeID> record_definitions;
     std::map<NamedDecl*, NodeID> named_decls;
+    std::map<int64_t, NodeID> clang_to_node_id; 
+
     ASTContext* ast_ctx;
 
 

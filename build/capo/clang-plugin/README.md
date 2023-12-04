@@ -15,6 +15,5 @@ cmake --build build
 ## Invocation 
 
 ```bash
-clang -g -c -Xclang -load -Xclang build/CLE.so -Xclang -plugin -Xclang cle test/foo.cpp > test/foo.ll
+clang -g -c -Xclang -load -Xclang build/CLE.so -Xclang -plugin -Xclang cle test/foo.cpp 
 ```
-
