@@ -1,0 +1,37 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(cppdbg) Run on foo.ll",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/opt/local/libexec/llvm-14/bin/opt",
+            "args": [
+                "-disable-output",
+                "-load-pass-plugin=build/ExtractDeclares.dylib",
+                "-passes=declare-csv",
+                "test_src/foo.ll"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(lldb) Run on foo.ll",
+            "type": "lldb",
+            "request": "launch",
+            "program": "/opt/local/libexec/llvm-14/bin/opt",
+            "args": [
+                "-disable-output",
+                "-load-pass-plugin=build/ExtractDeclares.dylib",
+                "-passes=declare-csv",
+                "test_src/foo.ll"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: build"
+        },
+    ]
+}

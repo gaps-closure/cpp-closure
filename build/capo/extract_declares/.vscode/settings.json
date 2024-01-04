@@ -1,0 +1,17 @@
+{
+    "cmake.configureOnOpen": true,
+    "cmake.environment": {
+        "LLVM_DIR": "/opt/local/libexec/llvm-14/lib/cmake/llvm"
+    },
+    "triggerTaskOnSave.tasks": {
+        "CMake: build": [
+            "*.cpp"
+        ]
+    },
+    "files.associations": {
+        "memory": "cpp",
+        "type_traits": "cpp",
+        "*.def": "cpp",
+        "*.inc": "cpp"
+    }
+}
