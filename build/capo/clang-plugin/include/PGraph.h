@@ -7,6 +7,7 @@
 #include "clang/AST/AST.h"
 #include "clang/AST/Attr.h"
 #include "clang/Analysis/CFG.h"
+#include "clang/Basic/SourceManager.h"
 
 namespace cle {
 namespace pgraph {
@@ -148,6 +149,7 @@ public:
 
     std::optional<SDecl*> as_sdecl();
     std::optional<NamedDecl*> named_decl();
+    clang::SourceRange source_range();
 
     int64_t clang_node_id(ASTContext*);
 
@@ -202,8 +204,11 @@ class Graph : public cle::Graph<Node, Edge> {
 public:    
     Graph(ASTContext* ctx) : ast_ctx(ctx) { }
     NodeID add_decl(Decl* decl, bool top_level = false); 
-    Table<NodeID, std::string, std::string, std::string, std::string> node_table();
-    Table<EdgeID, std::string, NodeID, NodeID> edge_table();
+    using NodeTable = Table<NodeID, std::string, std::string, std::string, std::string, 
+        std::string, unsigned int, unsigned int>;
+    using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
+    NodeTable node_table();
+    EdgeTable edge_table();
 
     NodeID add_node(Node&& node) override;
 private:

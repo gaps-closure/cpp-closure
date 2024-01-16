@@ -459,6 +459,43 @@ std::optional<NamedDecl*> pgraph::Node::named_decl() {
     }
 }
 
+clang::SourceRange pgraph::Node::source_range() {
+    switch(kind) {
+        case NodeKind::DECL_VAR:
+            return decl_var.decl->getSourceRange();
+        case NodeKind::DECL_FUN:
+            return decl_fun.decl->getSourceRange();
+        case NodeKind::DECL_RECORD:
+            return decl_fun.decl->getSourceRange();
+        case NodeKind::DECL_FIELD:
+            return decl_field.decl->getSourceRange();
+        case NodeKind::DECL_METHOD:
+            return decl_method.decl->getSourceRange();
+        case NodeKind::DECL_PARAM:
+            return decl_param.decl->getSourceRange();
+        case NodeKind::DECL_CONSTRUCTOR:
+            return decl_constructor.decl->getSourceRange();
+        case NodeKind::DECL_DESTRUCTOR:
+            return decl_destructor.decl->getSourceRange();
+        case NodeKind::STMT_DECL:
+            return stmt_decl.stmt->getSourceRange();
+        case NodeKind::STMT_CALL:
+            return stmt_call.stmt->getSourceRange();
+        case NodeKind::STMT_CONSTRUCTOR:
+            return stmt_cons.stmt->getSourceRange();
+        case NodeKind::STMT_IMPLICIT_DESTRUCTOR:
+            return stmt_implicit_dtor.dtor.getTriggerStmt()->getSourceRange();
+        case NodeKind::STMT_COMPOUND:
+            return stmt_compound.stmt->getSourceRange();
+        case NodeKind::STMT_RETURN:
+            return stmt_return.stmt->getSourceRange();
+        case NodeKind::STMT_REF:
+            return stmt_ref.stmt->getSourceRange();
+        default:
+            return stmt_other.stmt->getSourceRange();
+    }
+}
+
 int64_t pgraph::Node::clang_node_id(ASTContext* ctx) {
     switch(kind) {
         case NodeKind::DECL_VAR:
@@ -520,8 +557,8 @@ std::optional<SDecl*> pgraph::Node::as_sdecl() {
     }
 }
 
-Table<NodeID, std::string, std::string, std::string, std::string> pgraph::Graph::node_table() {
-    Table<NodeID, std::string, std::string, std::string, std::string> tbl;
+pgraph::Graph::NodeTable pgraph::Graph::node_table() {
+    pgraph::Graph::NodeTable tbl;
     for(auto [id, node] : nodes) {
         std::string name = node.qualified_name().value_or("");
         std::string nk_name = node_kind_name(node.kind);
@@ -543,9 +580,22 @@ Table<NodeID, std::string, std::string, std::string, std::string> pgraph::Graph:
             }
         }
         std::string ctx_id_str;
+
+        auto range = node.source_range();  
+        auto start_loc = range.getBegin();
+        auto &manager = ast_ctx->getSourceManager();
+        auto filename = manager.getFilename(start_loc).str();
+        auto start_off = manager.getFileOffset(start_loc);
+
+        auto end_loc = range.getEnd();
+        auto end_off = manager.getFileOffset(end_loc);
+ 
         if(ctx_id)
             ctx_id_str = std::to_string(*ctx_id);
-        HetList<cle::NodeID, std::string, std::string, std::string, std::string> row{id, nk_name, name, annotation, ctx_id_str}; 
+        HetList<cle::NodeID, std::string, std::string, std::string, std::string, 
+            std::string, unsigned int, unsigned int> 
+            row{id, nk_name, name, annotation, ctx_id_str, 
+                filename, start_off, end_off}; 
 
         tbl << row;
     }
@@ -553,8 +603,8 @@ Table<NodeID, std::string, std::string, std::string, std::string> pgraph::Graph:
 }
 
 
-Table<EdgeID, std::string, NodeID, NodeID> pgraph::Graph::edge_table() {
-    Table<EdgeID, std::string, NodeID, NodeID> tbl;
+pgraph::Graph::EdgeTable pgraph::Graph::edge_table() {
+    pgraph::Graph::EdgeTable tbl;
     for(auto [id, edge] : edges) {
         std::string ek_name = edge_kind_name(edge.kind);
         HetList<EdgeID, std::string, NodeID, NodeID> row{id, ek_name, edge.src, edge.dst};
