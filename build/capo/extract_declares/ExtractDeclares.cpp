@@ -1,24 +1,70 @@
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
+#include <filesystem>
+
 #include "llvm/IR/PassManager.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
+
+
 using namespace llvm;
 
 namespace {
+
+unsigned long long int get_file_offset(std::string src_file_path, unsigned int line, unsigned int column) {
+
+    char ch;
+    unsigned int line_count = 1;
+    unsigned int column_count = 1;
+    unsigned long long int file_offset = 0;
+
+    if (line < 1 || column < 1) {
+        return 0;
+    }
+
+    FILE * file_stream = fopen(src_file_path.c_str(), "r");
+
+    while(fread(&ch, 1, 1, file_stream)) {
+        file_offset++;
+        if (ch == EOF) break;
+        if (ch == '\n') {
+            line_count ++;
+            column_count = 1;
+        }
+
+        if (line_count == line && column_count == column) {
+            fclose(file_stream);
+            return file_offset;
+        }
+
+        column_count++;
+    }
+
+    fclose(file_stream);
+    return ~0;
+}
+
+
 struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
     PreservedAnalyses run(Module &module, ModuleAnalysisManager &MAM) {
 
         unsigned int ll_fn_instruction_num;
+        unsigned int referenced_fn_instruction_num;
         StringRef ll_fn_name;
 
-        StringRef src_file_name;
+        std::filesystem::path src_file_name;
         StringRef src_variable_name;
         unsigned int src_location_line;
         unsigned int src_location_col;
+        unsigned long long int src_location_file_offset;
 
         unsigned int param_pos;
+        std::unordered_map<void *, unsigned int> ll_fn_instruction_map;
+
+        std::filesystem::path ll_file_path = module.getName().str();
+        std::filesystem::path ll_file_path_parent = ll_file_path.parent_path();
 
         // https://llvm.org/docs/SourceLevelDebugging.html#llvm-dbg-declare
         Metadata * declare_arg_1;  // The first argument is metadata holding the address of variable
@@ -41,15 +87,19 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
             }
             for (auto *GVE : debug_info) {
                 DIVariable * variable_debug_info = GVE->getVariable();
-                src_file_name = variable_debug_info->getFilename();
+                src_file_name = variable_debug_info->getFilename().str();
+                if (!src_file_name.has_root_path()) {
+                    src_file_name = ll_file_path_parent / src_file_name;
+                }
                 src_location_line = variable_debug_info->getLine();
+                src_location_file_offset = get_file_offset(src_file_name, src_location_line, 1);
                 break;
             }
 
             csv_file 
-                << src_variable_name.str() << "::, "
-                << src_file_name.str() << ":"
-                << src_location_line << ":, "
+                << src_variable_name.str() << ",,,"
+                << src_file_name << ","
+                << src_location_file_offset << ",,"
                 << src_variable_name.str() << "\n";
         }
 
@@ -59,16 +109,23 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
             ll_fn_instruction_num = 0;
             for (auto &basic_block : caller_function.getBasicBlockList()) {
                 for (auto &instruction : basic_block.getInstList()) {
-                    ll_fn_instruction_num++;
+
+                    referenced_fn_instruction_num = ~0;
+                    ll_fn_instruction_map[&instruction] = ll_fn_instruction_num;
+
                     if (DbgDeclareInst *declare_call_inst = dyn_cast<DbgDeclareInst>(&instruction)) {
 
                         ll_fn_name = caller_function.getName();
                         param_pos = 0;
                         src_variable_name = "";
 
-                        src_file_name = declare_call_inst->getDebugLoc()->getFilename();
+                        src_file_name = declare_call_inst->getDebugLoc()->getFilename().str();
+                        if (!src_file_name.has_root_path()) {
+                            src_file_name = ll_file_path_parent / src_file_name;
+                        }
                         src_location_line = declare_call_inst->getDebugLoc()->getLine();
                         src_location_col = declare_call_inst->getDebugLoc()->getColumn();
+                        src_location_file_offset = get_file_offset(src_file_name, src_location_line, src_location_col);
 
                         declare_arg_it = declare_call_inst->arg_begin();
                         declare_arg_1 = dyn_cast<MetadataAsValue>(declare_arg_it->get())->getMetadata();
@@ -79,7 +136,7 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
                             
                         if (auto *address_of_variable = dyn_cast<ValueAsMetadata>(declare_arg_1)) {
                             if (AllocaInst *referenced_instruction = dyn_cast<AllocaInst>(address_of_variable->getValue())) {
-                                // unused currently
+                                referenced_fn_instruction_num = ll_fn_instruction_map[address_of_variable->getValue()];
                             } else {
                                 errs() << "ERROR: First argument not an allocation instruction reference\n";
                             }
@@ -102,22 +159,23 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
 
                         if (param_pos) {
                             csv_file 
-                                << ll_fn_name.str() << "::"
-                                << param_pos << ", ";
+                                << ll_fn_name.str() << ",,"
+                                << param_pos << ",";
                         } else {
                             csv_file 
-                                << ll_fn_name.str() << ":"
-                                << ll_fn_instruction_num << ":, ";
+                                << ll_fn_name.str() << ","
+                                << referenced_fn_instruction_num << ",,";
                         }
                         
                         csv_file
-                            << src_file_name.str() << ":"
-                            << src_location_line << ":"
-                            << src_location_col << ", "
+                            << src_file_name << ","
+                            << src_location_file_offset << ","
                             << src_variable_name.str() << "\n";
 
                     }
+                    ll_fn_instruction_num++;
                 }
+            
             }
         }
         
