@@ -35,48 +35,43 @@ enum NodeKind {
 
 std::string node_kind_name(NodeKind kind); 
 
-struct SDecl {
-    bool top_level = false;
-    SDecl(bool top_level) : top_level(top_level) {}
-    SDecl() : top_level(false) {}
-};
 
-struct DeclVar : public SDecl {
+struct DeclVar {
     clang::VarDecl* decl;
-    DeclVar(clang::VarDecl* decl, bool top_level = false) : SDecl(top_level), decl(decl) {}
+    DeclVar(clang::VarDecl* decl) : decl(decl) {}
 };
 
-struct DeclFun : public SDecl {
+struct DeclFun {
     clang::FunctionDecl* decl;
-    DeclFun(clang::FunctionDecl* decl) : SDecl(true), decl(decl) {}
+    DeclFun(clang::FunctionDecl* decl) : decl(decl) {}
 };
 
-struct DeclRecord : public SDecl {
+struct DeclRecord {
     clang::CXXRecordDecl* decl;
-    DeclRecord(clang::CXXRecordDecl* decl, bool top_level = false) : SDecl(top_level), decl(decl) {}
+    DeclRecord(clang::CXXRecordDecl* decl) : decl(decl) {}
 };
 
-struct DeclField : public SDecl {
+struct DeclField {
     clang::FieldDecl* decl;
     DeclField(clang::FieldDecl* decl) : decl(decl) {}
 };
 
-struct DeclMethod : public SDecl {
+struct DeclMethod {
     clang::CXXMethodDecl* decl;
     DeclMethod(clang::CXXMethodDecl* decl) : decl(decl) {}
 };
 
-struct DeclParam : public SDecl {
+struct DeclParam {
     clang::ParmVarDecl* decl;
     DeclParam(clang::ParmVarDecl* decl) : decl(decl) {}
 };
 
-struct DeclConstructor : public SDecl {
+struct DeclConstructor {
     clang::CXXConstructorDecl* decl;
     DeclConstructor(clang::CXXConstructorDecl* decl) : decl(decl) {}
 };
 
-struct DeclDestructor : public SDecl {
+struct DeclDestructor {
     clang::CXXDestructorDecl* decl;
     DeclDestructor(clang::CXXDestructorDecl* decl) : decl(decl) {}
 };
@@ -144,31 +139,31 @@ public:
         StmtOther stmt_other;
     };
     NodeKind kind;
+    std::optional<NamedDecl*> parent_decl; 
 
     std::optional<std::string> qualified_name();
 
-    std::optional<SDecl*> as_sdecl();
     std::optional<NamedDecl*> named_decl();
     clang::SourceRange source_range();
 
     int64_t clang_node_id(ASTContext*);
 
-    Node(DeclVar decl_var) : decl_var(decl_var), kind(DECL_VAR) {}
-    Node(DeclFun decl_fun) : decl_fun(decl_fun), kind(DECL_FUN) {}
-    Node(DeclRecord decl_record) : decl_record(decl_record), kind(DECL_RECORD) {}
-    Node(DeclField decl_field) : decl_field(decl_field), kind(DECL_FIELD) {}
-    Node(DeclParam decl_param) : decl_param(decl_param), kind(DECL_PARAM) {}
-    Node(DeclMethod decl_method) : decl_method(decl_method), kind(DECL_METHOD) {}
-    Node(DeclConstructor decl_constructor) : decl_constructor(decl_constructor), kind(DECL_CONSTRUCTOR) {}
-    Node(DeclDestructor decl_destructor) : decl_destructor(decl_destructor), kind(DECL_DESTRUCTOR) {}
-    Node(StmtDecl stmt_decl) : stmt_decl(stmt_decl), kind(STMT_DECL) {}
-    Node(StmtCall stmt_call) : stmt_call(stmt_call), kind(STMT_CALL) {}
-    Node(StmtConstructor stmt_cons) : stmt_cons(stmt_cons), kind(STMT_CONSTRUCTOR) {}
-    Node(StmtImplicitDestructor stmt) : stmt_implicit_dtor(stmt), kind(STMT_IMPLICIT_DESTRUCTOR) {}
-    Node(StmtCompound stmt_compound) : stmt_compound(stmt_compound), kind(STMT_COMPOUND) {}
-    Node(StmtReturn stmt_return) : stmt_return(stmt_return), kind(STMT_RETURN) {}
-    Node(StmtRef stmt_ref) : stmt_ref(stmt_ref), kind(STMT_REF) {}
-    Node(StmtOther stmt_other) : stmt_other(stmt_other), kind(STMT_OTHER) {}
+    Node(DeclVar decl_var, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_var(decl_var), kind(DECL_VAR), parent_decl(parent_decl) {}
+    Node(DeclFun decl_fun, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_fun(decl_fun), kind(DECL_FUN), parent_decl(parent_decl) {}
+    Node(DeclRecord decl_record, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_record(decl_record), kind(DECL_RECORD), parent_decl(parent_decl) {}
+    Node(DeclField decl_field, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_field(decl_field), kind(DECL_FIELD), parent_decl(parent_decl) {}
+    Node(DeclParam decl_param, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_param(decl_param), kind(DECL_PARAM), parent_decl(parent_decl) {}
+    Node(DeclMethod decl_method, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_method(decl_method), kind(DECL_METHOD), parent_decl(parent_decl) {}
+    Node(DeclConstructor decl_constructor, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_constructor(decl_constructor), kind(DECL_CONSTRUCTOR), parent_decl(parent_decl) {}
+    Node(DeclDestructor decl_destructor, std::optional<NamedDecl*> parent_decl = std::nullopt) : decl_destructor(decl_destructor), kind(DECL_DESTRUCTOR), parent_decl(parent_decl) {}
+    Node(StmtDecl stmt_decl, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_decl(stmt_decl), kind(STMT_DECL), parent_decl(parent_decl) {}
+    Node(StmtCall stmt_call, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_call(stmt_call), kind(STMT_CALL), parent_decl(parent_decl) {}
+    Node(StmtConstructor stmt_cons, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_cons(stmt_cons), kind(STMT_CONSTRUCTOR), parent_decl(parent_decl) {}
+    Node(StmtImplicitDestructor stmt, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_implicit_dtor(stmt), kind(STMT_IMPLICIT_DESTRUCTOR), parent_decl(parent_decl) {}
+    Node(StmtCompound stmt_compound, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_compound(stmt_compound), kind(STMT_COMPOUND), parent_decl(parent_decl) {}
+    Node(StmtReturn stmt_return, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_return(stmt_return), kind(STMT_RETURN), parent_decl(parent_decl) {}
+    Node(StmtRef stmt_ref, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_ref(stmt_ref), kind(STMT_REF), parent_decl(parent_decl) {}
+    Node(StmtOther stmt_other, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_other(stmt_other), kind(STMT_OTHER), parent_decl(parent_decl) {}
 };
 
 
@@ -203,8 +198,8 @@ struct Edge {
 class Graph : public cle::Graph<Node, Edge> {
 public:    
     Graph(ASTContext* ctx) : ast_ctx(ctx) { }
-    NodeID add_decl(Decl* decl, bool top_level = false); 
-    using NodeTable = Table<NodeID, std::string, std::string, std::string, std::string, 
+    NodeID add_decl(Decl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    using NodeTable = Table<NodeID, std::string, std::string, std::string, std::string,  
         std::string, unsigned int, unsigned int>;
     using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
     NodeTable node_table();
@@ -213,26 +208,26 @@ public:
     NodeID add_node(Node&& node) override;
 private:
 
-    NodeID add_record_decl(CXXRecordDecl* decl, bool top_level = false); 
-    NodeID add_function_decl(FunctionDecl* decl);
-    NodeID add_field_decl(FieldDecl* decl); 
-    NodeID add_method_decl(CXXMethodDecl* decl); 
-    NodeID add_constructor_decl(CXXConstructorDecl* decl); 
-    NodeID add_destructor_decl(CXXDestructorDecl* decl); 
-    NodeID add_stmt(Stmt* stmt); 
-    NodeID add_compound_stmt(CompoundStmt* stmt); 
-    NodeID add_decl_stmt(DeclStmt* stmt); 
-    NodeID add_return_stmt(ReturnStmt* stmt); 
-    NodeID add_ref_stmt(DeclRefExpr* stmt); 
-    NodeID add_call_stmt(CallExpr* stmt); 
-    NodeID add_constructor_call_stmt(CXXConstructExpr* stmt);
-    NodeID add_member_call_stmt(CXXMemberCallExpr* stmt); 
-    NodeID add_other_stmt(Stmt* stmt); 
+    NodeID add_record_decl(CXXRecordDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_function_decl(FunctionDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt);
+    NodeID add_field_decl(FieldDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_method_decl(CXXMethodDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_constructor_decl(CXXConstructorDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_destructor_decl(CXXDestructorDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_stmt(Stmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_compound_stmt(CompoundStmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_decl_stmt(DeclStmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_return_stmt(ReturnStmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_ref_stmt(DeclRefExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_call_stmt(CallExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_constructor_call_stmt(CXXConstructExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt);
+    NodeID add_member_call_stmt(CXXMemberCallExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_other_stmt(Stmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
 
     template<typename ClangDecl, typename CLENode> 
-    NodeID add_function_like(ClangDecl* decl);
+    NodeID add_function_like(ClangDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt);
 
-    void add_implicit_destructors(Decl* decl, Stmt* body);
+    void add_implicit_destructors(Decl* decl, Stmt* body, std::optional<NamedDecl*> parent_decl = std::nullopt);
 
     std::map<const Type*, NodeID> record_definitions;
     std::map<NamedDecl*, NodeID> named_decls;

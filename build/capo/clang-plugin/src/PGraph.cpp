@@ -95,7 +95,7 @@ NodeID pgraph::Graph::add_node(Node&& node) {
     return cur_node_id - 1;
 }
 
-NodeID pgraph::Graph::add_method_decl(CXXMethodDecl* decl) {
+NodeID pgraph::Graph::add_method_decl(CXXMethodDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
     NodeID id;
     bool found_prev_decl = false;
     for(auto redecl : decl->redecls()) {
@@ -103,8 +103,8 @@ NodeID pgraph::Graph::add_method_decl(CXXMethodDecl* decl) {
             id = named_decls[redecl];
             auto node = get_node(id);
             if(!node.decl_fun.decl->hasBody() && decl->hasBody()) {
-                replace_node(id, Node(DeclFun(decl)));
-                auto cid = add_stmt(decl->getBody());
+                replace_node(id, Node(DeclFun(decl), parent_decl));
+                auto cid = add_stmt(decl->getBody(), parent_decl);
                 add_edge(Edge(id, cid, CONTROL_ENTRY));
             }
             found_prev_decl = true;
@@ -112,17 +112,17 @@ NodeID pgraph::Graph::add_method_decl(CXXMethodDecl* decl) {
         }
     }
     if(!found_prev_decl)
-        id = add_node(Node(DeclMethod(decl)));
+        id = add_node(Node(DeclMethod(decl), parent_decl));
 
     return id;
 }
 
-NodeID pgraph::Graph::add_field_decl(FieldDecl* decl) {
-    return add_node(Node(DeclField(decl)));
+NodeID pgraph::Graph::add_field_decl(FieldDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
+    return add_node(Node(DeclField(decl), parent_decl));
 }
 
 template<typename ClangDecl, typename CLENode> 
-NodeID pgraph::Graph::add_function_like(ClangDecl* decl) {
+NodeID pgraph::Graph::add_function_like(ClangDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
     NodeID id;
     bool found_prev_decl = false;
     for(auto redecl : decl->redecls()) {
@@ -130,8 +130,8 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl) {
             id = named_decls[redecl];
             auto node = get_node(id);
             if(!node.decl_fun.decl->hasBody() && decl->hasBody()) {
-                replace_node(id, Node(CLENode(decl)));
-                auto cid = add_stmt(decl->getBody());
+                replace_node(id, Node(CLENode(decl), parent_decl));
+                auto cid = add_stmt(decl->getBody(), static_cast<NamedDecl*>(decl));
                 add_edge(Edge(id, cid, CONTROL_ENTRY));
             }
             found_prev_decl = true;
@@ -140,18 +140,18 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl) {
     }
 
     if(!found_prev_decl) {
-        id = add_node(Node(CLENode(decl)));
+        id = add_node(Node(CLENode(decl), parent_decl));
         auto decl_p = get_node(id).decl_fun.decl;
 
         for(auto param : decl_p->parameters()) {
-            auto pid = add_node(Node(DeclParam(param)));
+            auto pid = add_node(Node(DeclParam(param), static_cast<NamedDecl*>(decl)));
             add_edge(Edge(id, pid, DATA_PARAM));
         }
 
         if(decl->hasBody()) {
 
-            auto cid = add_stmt(decl->getBody());
-            add_implicit_destructors(decl, decl->getBody());
+            auto cid = add_stmt(decl->getBody(), static_cast<NamedDecl*>(decl));
+            add_implicit_destructors(decl, decl->getBody(),static_cast<NamedDecl*>(decl));
             add_edge(Edge(id, cid, CONTROL_ENTRY));
         }  
     }
@@ -160,25 +160,25 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl) {
 
 }
 
-NodeID pgraph::Graph::add_constructor_decl(CXXConstructorDecl* decl) {
-    return add_function_like<CXXConstructorDecl, DeclConstructor>(decl);
+NodeID pgraph::Graph::add_constructor_decl(CXXConstructorDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
+    return add_function_like<CXXConstructorDecl, DeclConstructor>(decl, parent_decl);
 }
 
-NodeID pgraph::Graph::add_destructor_decl(CXXDestructorDecl* decl) {
-    return add_function_like<CXXDestructorDecl, DeclDestructor>(decl);
+NodeID pgraph::Graph::add_destructor_decl(CXXDestructorDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
+    return add_function_like<CXXDestructorDecl, DeclDestructor>(decl, parent_decl);
 }
 
-NodeID pgraph::Graph::add_compound_stmt(CompoundStmt* stmt) {
-    auto id = add_node(Node(StmtCompound(stmt)));
+NodeID pgraph::Graph::add_compound_stmt(CompoundStmt* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtCompound(stmt), parent_decl));
     for(auto child : stmt->children()) {
-        auto cid = add_stmt(child);
+        auto cid = add_stmt(child, parent_decl);
         add_edge(Edge(id, cid, CHILD));
     }
     return id;
 }
 
-NodeID pgraph::Graph::add_ref_stmt(DeclRefExpr* stmt) {
-    auto id = add_node(Node(StmtRef(stmt)));
+NodeID pgraph::Graph::add_ref_stmt(DeclRefExpr* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtRef(stmt), parent_decl));
     if(named_decls.find(stmt->getFoundDecl()) != named_decls.end()) {
         auto did = named_decls[stmt->getFoundDecl()];
         add_edge(Edge(id, did, DATA_DEFUSE));
@@ -187,50 +187,50 @@ NodeID pgraph::Graph::add_ref_stmt(DeclRefExpr* stmt) {
 }
 
 
-NodeID pgraph::Graph::add_decl_stmt(DeclStmt* stmt) {
-    auto id = add_node(Node(StmtDecl(stmt)));
+NodeID pgraph::Graph::add_decl_stmt(DeclStmt* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtDecl(stmt), parent_decl));
     for(auto decl : stmt->decls()) {
-        auto did = add_decl(decl);
+        auto did = add_decl(decl, parent_decl);
         add_edge(Edge(id, did, DATA_DECL));
     }
     return id;
 }
 
-NodeID pgraph::Graph::add_other_stmt(Stmt* stmt) {
-    auto id = add_node(Node(StmtOther(stmt)));
+NodeID pgraph::Graph::add_other_stmt(Stmt* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtOther(stmt), parent_decl));
     for(auto child : stmt->children()) {
-        auto cid = add_stmt(child);
+        auto cid = add_stmt(child, parent_decl);
         add_edge(Edge(id, cid, CHILD));
     }
     return id;
 }
 
-NodeID pgraph::Graph::add_return_stmt(ReturnStmt* stmt) {
-    auto id = add_node(Node(StmtReturn(stmt)));
+NodeID pgraph::Graph::add_return_stmt(ReturnStmt* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtReturn(stmt), parent_decl));
 
     for(auto child : stmt->children()) {
-        auto cid = add_stmt(child);
+        auto cid = add_stmt(child, parent_decl);
         add_edge(Edge(id, cid, CHILD));
     }
    
     return id;
 }
 
-NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt) {
-    auto id = add_node(Node(StmtCall(stmt)));
+NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtCall(stmt), parent_decl));
 
     if(auto decl = stmt->getDirectCallee()) {
         NodeID fid;
         if(named_decls.find(decl) != named_decls.end()) {
             fid = named_decls[decl];
         } else {
-            fid = add_function_decl(decl);
+            fid = add_function_decl(decl, parent_decl);
         }
         add_edge(Edge(id, fid, CONTROL_FUNCTION_INVOCATION));
     }
 
     for(auto arg : stmt->arguments()) {
-        auto aid = add_stmt(arg);
+        auto aid = add_stmt(arg, parent_decl);
         add_edge(Edge(id, aid, DATA_ARGPASS));
     }
 
@@ -238,8 +238,8 @@ NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt) {
 }
 
 
-NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
-    auto id = add_node(Node(StmtCall(stmt)));
+NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtCall(stmt), parent_decl));
 
     // stmt->getPreArg()
     if(auto decl = stmt->getMethodDecl()) {
@@ -247,7 +247,7 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
         if(named_decls.find(decl) != named_decls.end()) {
             fid = named_decls[decl];
         } else {
-            fid = add_method_decl(decl);
+            fid = add_method_decl(decl, parent_decl);
         }
         auto node = get_node(fid);
         if(node.kind == DECL_DESTRUCTOR) {
@@ -258,12 +258,12 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
     }
 
     for(auto arg : stmt->arguments()) {
-        auto aid = add_stmt(arg);
+        auto aid = add_stmt(arg, parent_decl);
         add_edge(Edge(id, aid, DATA_ARGPASS));
     }
 
     if(auto obj = stmt->getImplicitObjectArgument()) {
-        auto oid = add_stmt(obj);
+        auto oid = add_stmt(obj, parent_decl);
         add_edge(Edge(id, oid, DATA_OBJECT));
     }
 
@@ -272,8 +272,8 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt) {
 }
 
 
-NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt) {
-    auto id = add_node(Node(StmtConstructor(stmt)));
+NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtConstructor(stmt), parent_decl));
 
     NodeID cid;
     {
@@ -281,14 +281,14 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt) {
         if(named_decls.find(decl) != named_decls.end()) {
             cid = named_decls[decl];
         } else {
-            cid = add_constructor_decl(stmt->getConstructor());
+            cid = add_constructor_decl(stmt->getConstructor(), parent_decl);
         }
     }
 
     add_edge(Edge(id, cid, CONTROL_CONSTRUCTOR_INVOCATION));
 
     for(auto arg : stmt->arguments()) {
-        auto aid = add_stmt(arg);
+        auto aid = add_stmt(arg, parent_decl);
         add_edge(Edge(id, aid, DATA_ARGPASS));
     }
 
@@ -296,28 +296,28 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt) {
 }
 
 
-NodeID pgraph::Graph::add_stmt(Stmt* stmt) {
+NodeID pgraph::Graph::add_stmt(Stmt* stmt, std::optional<clang::NamedDecl*> parent_decl) {
     switch(stmt->getStmtClass()) {
         case Stmt::CompoundStmtClass:
-            return add_compound_stmt(dyn_cast<CompoundStmt>(stmt));
+            return add_compound_stmt(dyn_cast<CompoundStmt>(stmt), parent_decl);
         case Stmt::DeclStmtClass:
-            return add_decl_stmt(dyn_cast<DeclStmt>(stmt));
+            return add_decl_stmt(dyn_cast<DeclStmt>(stmt), parent_decl);
         case Stmt::ReturnStmtClass:
-            return add_return_stmt(dyn_cast<ReturnStmt>(stmt));
+            return add_return_stmt(dyn_cast<ReturnStmt>(stmt), parent_decl);
         case Stmt::DeclRefExprClass: 
-            return add_ref_stmt(dyn_cast<DeclRefExpr>(stmt));
+            return add_ref_stmt(dyn_cast<DeclRefExpr>(stmt), parent_decl);
         case Stmt::CallExprClass:
-            return add_call_stmt(dyn_cast<CallExpr>(stmt));
+            return add_call_stmt(dyn_cast<CallExpr>(stmt), parent_decl);
         case Stmt::CXXConstructExprClass:
-            return add_constructor_call_stmt(dyn_cast<CXXConstructExpr>(stmt));
+            return add_constructor_call_stmt(dyn_cast<CXXConstructExpr>(stmt), parent_decl);
         case Stmt::CXXMemberCallExprClass:
-            return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt));
+            return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt), parent_decl);
         default:
-            return add_other_stmt(stmt);
+            return add_other_stmt(stmt, parent_decl);
     }
 }
 
-void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body) {
+void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body, std::optional<clang::NamedDecl*> parent_decl) {
     clang::CFG::BuildOptions opts;
     opts.AddImplicitDtors = true;
     opts.AddScopes = true;
@@ -340,7 +340,7 @@ void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body) {
                         }
                     }
                     if(parent_id) {
-                        auto did = add_node(Node(StmtImplicitDestructor(*dtor)));
+                        auto did = add_node(Node(StmtImplicitDestructor(*dtor), parent_decl));
                         add_edge(Edge(*parent_id, did, EdgeKind::CHILD));
                         add_edge(Edge(did, clang_to_node_id[dtor->getDestructorDecl(*ast_ctx)->getID()], EdgeKind::CONTROL_DESTRUCTOR_INVOCATION));
                     }
@@ -351,11 +351,11 @@ void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body) {
 
 }
 
-NodeID pgraph::Graph::add_function_decl(FunctionDecl* decl) {
-    return add_function_like<FunctionDecl, DeclFun>(decl);
+NodeID pgraph::Graph::add_function_decl(FunctionDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
+    return add_function_like<FunctionDecl, DeclFun>(decl, parent_decl);
 }
 
-NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, bool top_level) {
+NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
 
     NodeID id; 
     bool found_prev_decl = false;
@@ -364,14 +364,14 @@ NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, bool top_level) {
             id = named_decls[redecl];
             auto node = get_node(id);
             if(!node.decl_record.decl->hasDefinition() && decl->hasDefinition()) {
-                replace_node(id, Node(DeclRecord(decl)));
+                replace_node(id, Node(DeclRecord(decl), parent_decl));
             }
             found_prev_decl = true;
             break;
         }
     }
     if(!found_prev_decl)
-        id = add_node(Node(DeclRecord(decl, top_level)));
+        id = add_node(Node(DeclRecord(decl), parent_decl));
 
     if(!decl->hasDefinition())
         return id;
@@ -385,40 +385,40 @@ NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, bool top_level) {
     record_definitions.insert(std::pair(decl->getTypeForDecl(), id));
 
     for(auto fdecl : decl->fields()) {
-        auto fid = add_field_decl(fdecl);
+        auto fid = add_field_decl(fdecl, static_cast<NamedDecl*>(decl));
         add_edge(Edge(id, fid, RECORD_FIELD));
     }
 
     for(auto mdecl : decl->methods()) {
         if(clang::isa<CXXConstructorDecl>(mdecl) || clang::isa<CXXDestructorDecl>(mdecl))
             continue;
-        auto mid = add_method_decl(mdecl);
+        auto mid = add_method_decl(mdecl, static_cast<NamedDecl*>(decl));
         add_edge(Edge(id, mid, RECORD_METHOD));
     }
 
     for(auto cdecl : decl->ctors()) {
-        auto cid = add_constructor_decl(cdecl);
+        auto cid = add_constructor_decl(cdecl, static_cast<NamedDecl*>(decl));
         add_edge(Edge(id, cid, RECORD_CONSTRUCTOR));
     }
 
     if(decl->hasUserDeclaredDestructor()) {
         auto ddecl = decl->getDestructor();
-        auto did = add_destructor_decl(ddecl);
+        auto did = add_destructor_decl(ddecl, static_cast<NamedDecl*>(decl));
         add_edge(Edge(id, did, RECORD_CONSTRUCTOR));
     }
     return id;
 }
 
-NodeID pgraph::Graph::add_decl(Decl* decl, bool top_level) {
+NodeID pgraph::Graph::add_decl(Decl* decl, std::optional<clang::NamedDecl*> parent_decl) {
     switch(decl->getKind()) {
         case Decl::Var: 
-            return add_node(Node(DeclVar(dyn_cast<VarDecl>(decl), top_level)));
+            return add_node(Node(DeclVar(dyn_cast<VarDecl>(decl)), parent_decl));
         case Decl::Function:
-            return add_function_decl(dyn_cast<FunctionDecl>(decl));
+            return add_function_decl(dyn_cast<FunctionDecl>(decl), parent_decl);
         case Decl::CXXRecord:
-            return add_record_decl(dyn_cast<CXXRecordDecl>(decl));
+            return add_record_decl(dyn_cast<CXXRecordDecl>(decl), parent_decl);
         case Decl::CXXMethod:
-            return add_method_decl(dyn_cast<CXXMethodDecl>(decl));
+            return add_method_decl(dyn_cast<CXXMethodDecl>(decl), parent_decl);
         // case Decl::Field:
             // add_field_decl(dyn_cast<FieldDecl>(decl));
             // return;
@@ -533,30 +533,6 @@ int64_t pgraph::Node::clang_node_id(ASTContext* ctx) {
     }
 }
 
-
-std::optional<SDecl*> pgraph::Node::as_sdecl() {
-    switch(kind) {
-        case NodeKind::DECL_VAR:
-            return &decl_var;
-        case NodeKind::DECL_FUN:
-            return &decl_fun;
-        case NodeKind::DECL_RECORD:
-            return &decl_record;
-        case NodeKind::DECL_FIELD:
-            return &decl_field;
-        case NodeKind::DECL_METHOD:
-            return &decl_method;
-        case NodeKind::DECL_PARAM:
-            return &decl_param;
-        case NodeKind::DECL_CONSTRUCTOR:
-            return &decl_constructor;
-        case NodeKind::DECL_DESTRUCTOR:
-            return &decl_destructor;
-        default:
-            return std::nullopt;
-    }
-}
-
 pgraph::Graph::NodeTable pgraph::Graph::node_table() {
     pgraph::Graph::NodeTable tbl;
     for(auto [id, node] : nodes) {
@@ -570,16 +546,16 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
             }
         }
 
-        std::optional<NodeID> ctx_id = std::nullopt;
-        if(auto decl = node.named_decl()) {
-            auto ctx = (*decl)->getDeclContext();
-            if(auto named_ctx = dyn_cast<NamedDecl>(ctx)) {
-                if(named_decls.find(named_ctx) != named_decls.end()) {
-                    ctx_id = named_decls[named_ctx];
-                }
+
+        std::optional<NodeID> parent_id = std::nullopt; 
+        if(node.parent_decl) {
+            auto decl = *(node.parent_decl);
+            if(named_decls.find(decl) != named_decls.end()) {
+                parent_id = named_decls[decl];
             }
         }
-        std::string ctx_id_str;
+
+        std::string parent_id_str;
 
         auto range = node.source_range();  
         auto start_loc = range.getBegin();
@@ -590,11 +566,11 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
         auto end_loc = range.getEnd();
         auto end_off = manager.getFileOffset(end_loc);
  
-        if(ctx_id)
-            ctx_id_str = std::to_string(*ctx_id);
+        if(parent_id)
+            parent_id_str = std::to_string(*parent_id);
         HetList<cle::NodeID, std::string, std::string, std::string, std::string, 
             std::string, unsigned int, unsigned int> 
-            row{id, nk_name, name, annotation, ctx_id_str, 
+            row{id, nk_name, name, annotation, parent_id_str, 
                 filename, start_off, end_off}; 
 
         tbl << row;
