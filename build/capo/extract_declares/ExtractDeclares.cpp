@@ -25,6 +25,10 @@ unsigned long long int get_file_offset(std::string src_file_path, unsigned int l
     }
 
     FILE * file_stream = fopen(src_file_path.c_str(), "r");
+    if (file_stream == NULL) {
+        errs() << "WARNING: Could not read source file: " << src_file_path.c_str() << "\n";
+        return ~0;
+    }
 
     while(fread(&ch, 1, 1, file_stream)) {
         file_offset++;
@@ -99,8 +103,15 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
 
             csv_file 
                 << src_variable_name.str() << ",,,"
-                << src_file_name << ","
-                << src_location_file_offset << ",,"
+                << src_file_name << ",";
+            
+            if (src_location_file_offset == ~0ull) {
+                csv_file << ",,,";
+            } else {
+                csv_file << src_location_file_offset << ",,";
+            }
+
+            csv_file
                 << src_variable_name.str() << "\n";
         }
 
@@ -170,10 +181,15 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
                                 << referenced_fn_instruction_num << ",,";
                         }
                         
-                        csv_file
-                            << src_file_name << ","
-                            << src_location_file_offset << ","
-                            << src_variable_name.str() << "\n";
+                        csv_file << src_file_name << ",";
+
+                        if (src_location_file_offset == ~0ull) {
+                            csv_file << ",,";
+                        } else {
+                            csv_file << src_location_file_offset << ",";
+                        }
+
+                        csv_file << src_variable_name.str() << "\n";
 
                     }
                     ll_fn_instruction_num++;
