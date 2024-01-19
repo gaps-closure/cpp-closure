@@ -11,14 +11,21 @@ SourceTree = Dict[str, IntervalTree]
 @dataclass
 class GlobalID: 
     global_name: str
+    def __hash__(self):
+        return hash((self.global_name, -1, -1))
 
 @dataclass
 class InstID(GlobalID):
     inst_idx: int
+    def __hash__(self):
+        return hash((self.global_name, self.inst_idx, -1))
 
 @dataclass
 class ParamID(GlobalID):
     param_idx: int
+    def __hash__(self):
+        return hash((self.global_name, -1, self.param_idx))
+
 
 LLID = Union[GlobalID, InstID, ParamID]
 
@@ -42,7 +49,7 @@ class SourceRef:
 
 @dataclass
 class PNode: 
-    node_id: int 
+    id: int 
     node_type: str 
     parent_decl: Optional[int]
     debug: Optional[str]
@@ -103,7 +110,7 @@ DeclMap = Dict[LLID, int]
 def decl_refs(decl_map_filename: Path) -> Generator[DeclRef, None, None]:
     with open(decl_map_filename) as decl_map_file:
         for row in csv.reader(decl_map_file):
-            tup: Tuple[str, str, str] = tuple(row[0:2]) # type: ignore[assignment]
+            tup: Tuple[str, str, str] = tuple(row[0:3]) # type: ignore[assignment]
             llid = llid_from_str_tuple(tup)
             filename = row[3]
             offset = int(row[4])
@@ -115,8 +122,8 @@ def decl_map(graph: PGraph, decl_refs: Iterable[DeclRef]) -> DeclMap:
             iset: set = graph.source_tree[ref.file][ref.offset]
             sorted_iset = sorted(iset, key=lambda i: abs(ref.offset - i.begin))
             if len(sorted_iset) > 0:
-                node: PNode = sorted_iset[0]
-                yield (llid, node.node_id)
+                node: PNode = sorted_iset[0].data
+                yield (llid, node.id)
     return {llid: node_id for llid, node_id in mk()}
 
 @dataclass
@@ -177,17 +184,19 @@ def main() -> None:
     ptgraph = PTGraph(list(svf_nodes(args.svf_node_csv)), list(svf_edges(args.svf_edge_csv)))
 
     # example query
-    print(sorted(pgraph.source_tree['test/foo.cpp'][613], key=lambda x: abs(613 - x.begin)))
-    print(ptgraph.nodes)
+    # print(sorted(pgraph.source_tree['foo.cpp'][15], key=lambda x: abs(15 - x.begin)))
+    # print(ptgraph.nodes)
 
-    # dmap = decl_map(pgraph, decl_refs(args.declares_csv))
-    # edge_idx = len(pgraph.edges)
-    # for edge in ptgraph.edges:
-    #     src_llid = ptgraph.nodes[edge.src].llid
-    #     dst_llid = ptgraph.nodes[edge.dst].llid
-    #     if src_llid in dmap and dst_llid in dmap:
-    #         print(edge_idx, 'Data.PointsTo', dmap[src_llid], dmap[dst_llid])
-    #         edge_idx += 1
+    refs = list(decl_refs(args.declares_csv))
+    dmap = decl_map(pgraph, refs)
+    edge_idx = len(pgraph.edges)
+    for edge in ptgraph.edges:
+        src_llid = ptgraph.nodes[edge.src].llid
+        dst_llid = ptgraph.nodes[edge.dst].llid
+        if src_llid in dmap and dst_llid in dmap:
+            if dmap[src_llid] != dmap[dst_llid]:
+                print(','.join([str(edge_idx), 'Data.PointsTo', str(dmap[src_llid]), str(dmap[dst_llid]), str(edge.src), str(edge.dst)]))
+                edge_idx += 1
 
 
 if __name__ == '__main__':

@@ -64,7 +64,7 @@ public:
 
     bool HandleTopLevelDecl(DeclGroupRef dg) override {
         for(auto decl : dg) {
-            pg.add_decl(decl, true);
+            pg.add_decl(decl);
         }
         return true;
     }

@@ -42,6 +42,8 @@ public:
         return cur_edge_id - 1;
     }
 
+    virtual ~Graph() {}
+
 protected:
     NodeID cur_node_id = 0;
     EdgeID cur_edge_id = 0;
