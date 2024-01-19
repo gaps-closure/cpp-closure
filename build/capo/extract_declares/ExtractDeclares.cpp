@@ -54,6 +54,7 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
         unsigned int referenced_fn_instruction_num;
         StringRef ll_fn_name;
 
+        std::filesystem::path src_file_dir;
         std::filesystem::path src_file_name;
         StringRef src_variable_name;
         unsigned int src_location_line;
@@ -62,9 +63,6 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
 
         unsigned int param_pos;
         std::unordered_map<void *, unsigned int> ll_fn_instruction_map;
-
-        std::filesystem::path ll_file_path = module.getName().str();
-        std::filesystem::path ll_file_path_parent = ll_file_path.parent_path();
 
         // https://llvm.org/docs/SourceLevelDebugging.html#llvm-dbg-declare
         Metadata * declare_arg_1;  // The first argument is metadata holding the address of variable
@@ -87,10 +85,13 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
             }
             for (auto *GVE : debug_info) {
                 DIVariable * variable_debug_info = GVE->getVariable();
+
+                src_file_dir = variable_debug_info->getDirectory().str();
                 src_file_name = variable_debug_info->getFilename().str();
                 if (!src_file_name.has_root_path()) {
-                    src_file_name = ll_file_path_parent / src_file_name;
+                    src_file_name = src_file_dir / src_file_name;
                 }
+
                 src_location_line = variable_debug_info->getLine();
                 src_location_file_offset = get_file_offset(src_file_name, src_location_line, 1);
                 break;
@@ -119,10 +120,12 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
                         param_pos = 0;
                         src_variable_name = "";
 
+                        src_file_dir = declare_call_inst->getDebugLoc()->getDirectory().str();
                         src_file_name = declare_call_inst->getDebugLoc()->getFilename().str();
                         if (!src_file_name.has_root_path()) {
-                            src_file_name = ll_file_path_parent / src_file_name;
+                            src_file_name = src_file_dir / src_file_name;
                         }
+
                         src_location_line = declare_call_inst->getDebugLoc()->getLine();
                         src_location_col = declare_call_inst->getDebugLoc()->getColumn();
                         src_location_file_offset = get_file_offset(src_file_name, src_location_line, src_location_col);
