@@ -61,5 +61,6 @@ from the LLVM/SVF through use of the debug info.
 | Data.Object                   | Connects a method call/field to the object being called upon (e.g. f as in f.foo())     | Stmt.Call/Stmt.Field | Stmt             | From AST       |
 | Data.Param                    | Connects a function-like object to its parameters                                       | Decl                 | Decl.Param       | From AST       |
 | Data.FieldAccess              | A field access                                                                          | Stmt                 | Decl.Field       | From AST       |
+| Data.HasClass                 | Connects a 'this' instance to a class definition                                        | Stmt.This            | Decl.Record      | From AST       |
 | Data.Decl                     | Connects a decl statment to a decl                                                      | Stmt.Decl            | Decl             | From AST       |
 | Child                         | When a statement has a child not described by the above. Can be pruned out of the graph | Stmt                 | Stmt             | From AST       |
