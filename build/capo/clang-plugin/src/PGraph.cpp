@@ -39,6 +39,8 @@ std::string pgraph::node_kind_name(NodeKind kind) {
         return "Stmt.Ref";
     case STMT_OTHER:
         return "Stmt.Other";
+    case STMT_THIS:
+        return "Stmt.This";
     default:
         return "Unknown";
     }
@@ -96,25 +98,7 @@ NodeID pgraph::Graph::add_node(Node&& node) {
 }
 
 NodeID pgraph::Graph::add_method_decl(CXXMethodDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
-    NodeID id;
-    bool found_prev_decl = false;
-    for(auto redecl : decl->redecls()) {
-        if(named_decls.find(redecl) != named_decls.end()) {
-            id = named_decls[redecl];
-            auto node = get_node(id);
-            if(!node.decl_fun.decl->hasBody() && decl->hasBody()) {
-                replace_node(id, Node(DeclFun(decl), parent_decl));
-                auto cid = add_stmt(decl->getBody(), parent_decl);
-                add_edge(Edge(id, cid, CONTROL_ENTRY));
-            }
-            found_prev_decl = true;
-            break;
-        }
-    }
-    if(!found_prev_decl)
-        id = add_node(Node(DeclMethod(decl), parent_decl));
-
-    return id;
+    return add_function_like<CXXMethodDecl, DeclMethod>(decl, parent_decl);
 }
 
 NodeID pgraph::Graph::add_field_decl(FieldDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
@@ -125,13 +109,17 @@ template<typename ClangDecl, typename CLENode>
 NodeID pgraph::Graph::add_function_like(ClangDecl* decl, std::optional<clang::NamedDecl*> parent_decl) {
     NodeID id;
     bool found_prev_decl = false;
+    FunctionDecl* decl_with_body = nullptr;
     for(auto redecl : decl->redecls()) {
+        if(redecl->hasBody()) {
+            decl_with_body = redecl;
+        }
         if(named_decls.find(redecl) != named_decls.end()) {
             id = named_decls[redecl];
             auto node = get_node(id);
-            if(!node.decl_fun.decl->hasBody() && decl->hasBody()) {
-                replace_node(id, Node(CLENode(decl), parent_decl));
-                auto cid = add_stmt(decl->getBody(), static_cast<NamedDecl*>(decl));
+            if(decl_with_body != nullptr) {
+                replace_node(id, Node(CLENode(static_cast<ClangDecl*>(decl_with_body)), parent_decl));
+                auto cid = add_stmt(decl_with_body->getBody(), static_cast<NamedDecl*>(decl_with_body));
                 add_edge(Edge(id, cid, CONTROL_ENTRY));
             }
             found_prev_decl = true;
@@ -202,6 +190,11 @@ NodeID pgraph::Graph::add_other_stmt(Stmt* stmt, std::optional<clang::NamedDecl*
         auto cid = add_stmt(child, parent_decl);
         add_edge(Edge(id, cid, CHILD));
     }
+    return id;
+}
+
+NodeID pgraph::Graph::add_this_stmt(CXXThisExpr* stmt, std::optional<clang::NamedDecl*> parent_decl) {
+    auto id = add_node(Node(StmtThis(stmt), parent_decl));
     return id;
 }
 
@@ -312,6 +305,8 @@ NodeID pgraph::Graph::add_stmt(Stmt* stmt, std::optional<clang::NamedDecl*> pare
             return add_constructor_call_stmt(dyn_cast<CXXConstructExpr>(stmt), parent_decl);
         case Stmt::CXXMemberCallExprClass:
             return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt), parent_decl);
+        case Stmt::CXXThisExprClass:
+            return add_this_stmt(dyn_cast<CXXThisExpr>(stmt), parent_decl);
         default:
             return add_other_stmt(stmt, parent_decl);
     }
@@ -325,7 +320,7 @@ void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body, std::option
     std::unique_ptr<clang::CFG> cfg(
         clang::CFG::buildCFG(decl, decl->getBody(), ast_ctx, opts)
     );
-    cfg->dump(LangOptions(), true);
+    // cfg->dump(LangOptions(), true);
     for(auto block : *cfg) {
         for(auto stmt : *block) {
             if (auto dtor = stmt.getAs<clang::CFGAutomaticObjDtor>()) {
@@ -491,6 +486,8 @@ clang::SourceRange pgraph::Node::source_range() {
             return stmt_return.stmt->getSourceRange();
         case NodeKind::STMT_REF:
             return stmt_ref.stmt->getSourceRange();
+        case NodeKind::STMT_THIS:
+            return stmt_this.stmt->getSourceRange();
         default:
             return stmt_other.stmt->getSourceRange();
     }
@@ -528,6 +525,8 @@ int64_t pgraph::Node::clang_node_id(ASTContext* ctx) {
             return stmt_ref.stmt->getID(*ctx);
         case NodeKind::STMT_OTHER:
             return stmt_other.stmt->getID(*ctx);
+        case NodeKind::STMT_THIS:
+            return stmt_this.stmt->getID(*ctx);
         default:
             return -1;
     }

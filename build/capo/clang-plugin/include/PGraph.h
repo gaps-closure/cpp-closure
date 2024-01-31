@@ -30,7 +30,8 @@ enum NodeKind {
     STMT_COMPOUND,
     STMT_RETURN,
     STMT_REF,
-    STMT_OTHER
+    STMT_OTHER,
+    STMT_THIS
 };
 
 std::string node_kind_name(NodeKind kind); 
@@ -116,6 +117,10 @@ struct StmtOther {
     StmtOther(clang::Stmt* stmt) : stmt(stmt) {}
 };
 
+struct StmtThis {
+    clang::CXXThisExpr* stmt;
+    StmtThis(clang::CXXThisExpr* stmt) : stmt(stmt) {}
+};
 
 
 class Node {
@@ -137,6 +142,7 @@ public:
         StmtReturn stmt_return;
         StmtRef stmt_ref;
         StmtOther stmt_other;
+        StmtThis stmt_this;
     };
     NodeKind kind;
     std::optional<NamedDecl*> parent_decl; 
@@ -164,6 +170,7 @@ public:
     Node(StmtReturn stmt_return, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_return(stmt_return), kind(STMT_RETURN), parent_decl(parent_decl) {}
     Node(StmtRef stmt_ref, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_ref(stmt_ref), kind(STMT_REF), parent_decl(parent_decl) {}
     Node(StmtOther stmt_other, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_other(stmt_other), kind(STMT_OTHER), parent_decl(parent_decl) {}
+    Node(StmtThis stmt_this, std::optional<NamedDecl*> parent_decl = std::nullopt) : stmt_this(stmt_this), kind(STMT_THIS), parent_decl(parent_decl) {}
 };
 
 
@@ -223,6 +230,7 @@ private:
     NodeID add_constructor_call_stmt(CXXConstructExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt);
     NodeID add_member_call_stmt(CXXMemberCallExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
     NodeID add_other_stmt(Stmt* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt); 
+    NodeID add_this_stmt(CXXThisExpr* stmt, std::optional<NamedDecl*> parent_decl = std::nullopt);
 
     template<typename ClangDecl, typename CLENode> 
     NodeID add_function_like(ClangDecl* decl, std::optional<NamedDecl*> parent_decl = std::nullopt);
