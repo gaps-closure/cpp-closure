@@ -61,6 +61,45 @@ from the LLVM/SVF through use of the debug info.
 | Data.Object                   | Connects a method call/field to the object being called upon (e.g. f as in f.foo())     | Stmt.Call/Stmt.Field | Stmt             | From AST       |
 | Data.Param                    | Connects a function-like object to its parameters                                       | Decl                 | Decl.Param       | From AST       |
 | Data.FieldAccess              | A field access                                                                          | Stmt                 | Decl.Field       | From AST       |
-| Data.HasClass                 | Connects a 'this' instance to a class definition                                        | Stmt.This            | Decl.Record      | From AST       |
+| Data.InstanceOf                 | Connects a 'this' instance to a class definition                                        | Stmt.This            | Decl.Record      | From AST       |
 | Data.Decl                     | Connects a decl statment to a decl                                                      | Stmt.Decl            | Decl             | From AST       |
 | Child                         | When a statement has a child not described by the above. Can be pruned out of the graph | Stmt                 | Stmt             | From AST       |
+
+## Example snippet
+
+```
+class Foo()
+    #cle ORANGE
+    Bar a;
+    method() {
+        int c; // Nodes: Decl.Var for 'c'
+        c = d; // Nodes: Stmt.Other for the assignment. 
+               //        Children are Stmt.Ref to 'c', Stmt.Ref to 'd'. DefUse edge from ref to Decl.Var for 'd'.
+        this.a.b = c;
+    }
+```
+
+### Nodes
+
+1. Stmt.Other node. Represents the entire assignment statement
+2. Stmt.Field node. For the LHS, 'this.a.b'
+3. Stmt.Field node. For 'this.a'
+4. Stmt.This node. For 'this'
+5. Decl.Field node for the class field 'Bar a' (gets ORANGE from annotation)
+6. Decl.Field node for the class field 'b'
+7. Stmt.Ref node for 'c'
+8. Decl.Method node for method()
+0. Decl.Record node for Foo
+
+### Edges
+
+  - Child edge between (1) and (2)
+  - Child edge between (1) and (7)
+  - Data.FieldAccess edge between (2) and (6)
+  - Data.Object edge between (2) and (3)
+  - Data.Object edge between (3) and (4)
+  - Data.HasClass edge between (4) and (9)
+  - Data.FieldAccess edge between (3) and (5)
+  - Data.DefUse edge between (7) and the Decl.Var for `c`
+  - Record.Field edge from (9) to (5)
+  - Record.Method edge from (9) to (8)
