@@ -84,9 +84,7 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
             SmallVector<DIGlobalVariableExpression *, 1> debug_info;
             global_var.getDebugInfo(debug_info);
 
-            if (debug_info.size() != 1) {
-                errs() << "WARNING: Unexpected debug information for global, just getting the first";
-            }
+            int valid_debug_entries = 0;
             for (auto *GVE : debug_info) {
                 DIVariable * variable_debug_info = GVE->getVariable();
 
@@ -98,7 +96,10 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
 
                 src_location_line = variable_debug_info->getLine();
                 src_location_file_offset = get_file_offset(src_file_name, src_location_line, 1);
-                break;
+                valid_debug_entries++;
+            }
+            if (debug_info.size() != 1 && valid_debug_entries > 0) {
+                errs() << "WARNING: Multiple instances of debug information for global, using the last valid\n";
             }
 
             csv_file 
@@ -152,7 +153,9 @@ struct ExtractDeclares : public PassInfoMixin<ExtractDeclares> {
                             if (AllocaInst *referenced_instruction = dyn_cast<AllocaInst>(address_of_variable->getValue())) {
                                 referenced_fn_instruction_num = ll_fn_instruction_map[address_of_variable->getValue()];
                             } else {
-                                errs() << "ERROR: First argument not an allocation instruction reference\n";
+                                errs() << "INFO: First argument to declare is not an allocation instruction reference, skipping (" <<
+                                ll_fn_name << ":" << ll_fn_instruction_num << ")\n";
+                                continue;
                             }
                         } else {
                             errs() << "ERROR: First argument in unexpected form\n";
