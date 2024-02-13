@@ -1,0 +1,9 @@
+0,Data.Decl,2,3
+1,Child,1,2
+2,Data.Decl,4,5
+3,Child,1,4
+4,Data.Decl,6,7
+5,Child,1,6
+6,Child,8,9
+7,Child,1,8
+8,Control.Entry,0,1

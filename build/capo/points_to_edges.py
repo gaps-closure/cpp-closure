@@ -89,9 +89,9 @@ def pnodes(filename: Path) -> Generator[PNode, None, None]:
             debug = row[2] or None
             annot = row[3] or None
             parent = int(row[4]) if row[4] else None
-            file = row[5]
-            start_off = int(row[6])
-            end_off = int(row[7])
+            file = row[-3]
+            start_off = int(row[-2])
+            end_off = int(row[-1])
             yield PNode(id, type, parent, debug, annot, (SourceRef(file, start_off), SourceRef(file, end_off + 1)))
 
 def pedges(filename: Path) -> Generator[PEdge, None, None]:
@@ -113,7 +113,7 @@ def decl_refs(decl_map_filename: Path) -> Generator[DeclRef, None, None]:
             tup: Tuple[str, str, str] = tuple(row[0:3]) # type: ignore[assignment]
             llid = llid_from_str_tuple(tup)
             filename = row[3]
-            offset = int(row[4])
+            offset = int(row[4]) if row[4] else 0
             yield (llid, SourceRef(filename, offset))
 
 def decl_map(graph: PGraph, decl_refs: Iterable[DeclRef]) -> DeclMap:
@@ -195,7 +195,7 @@ def main() -> None:
         dst_llid = ptgraph.nodes[edge.dst].llid
         if src_llid in dmap and dst_llid in dmap:
             if dmap[src_llid] != dmap[dst_llid]:
-                print(','.join([str(edge_idx), 'Data.PointsTo', str(dmap[src_llid]), str(dmap[dst_llid]), str(edge.src), str(edge.dst)]))
+                print(','.join([str(edge_idx), 'Data.PointsTo', str(dmap[src_llid]), str(dmap[dst_llid])]))
                 edge_idx += 1
 
 
