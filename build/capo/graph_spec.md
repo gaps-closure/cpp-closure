@@ -89,7 +89,7 @@ class Foo()
 6. Decl.Field node for the class field 'b'
 7. Stmt.Ref node for 'c'
 8. Decl.Method node for method()
-0. Decl.Record node for Foo
+9. Decl.Record node for Foo
 
 ### Edges
 
@@ -98,7 +98,7 @@ class Foo()
   - Data.FieldAccess edge between (2) and (6)
   - Data.Object edge between (2) and (3)
   - Data.Object edge between (3) and (4)
-  - Data.HasClass edge between (4) and (9)
+  - Data.InstanceOf edge between (4) and (9)
   - Data.FieldAccess edge between (3) and (5)
   - Data.DefUse edge between (7) and the Decl.Var for `c`
   - Record.Field edge from (9) to (5)
