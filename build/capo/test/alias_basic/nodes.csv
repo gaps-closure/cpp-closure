@@ -1,0 +1,10 @@
+0,Decl.Fun,main,,,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,2,82
+1,Stmt.Compound,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,13,82
+2,Stmt.Decl,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,19,28
+3,Decl.Var,y,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,19,27
+4,Stmt.Decl,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,34,45
+5,Decl.Var,x,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,34,44
+6,Stmt.Decl,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,51,61
+7,Decl.Var,z,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,51,60
+8,Stmt.Return,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,72,79
+9,Stmt.Other,,,0,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,79,79
