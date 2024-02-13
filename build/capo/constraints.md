@@ -73,3 +73,19 @@ class Bar {
 
 }
 
+
+Foo f;
+
+class Foo {
+    int x;
+    int y;
+};
+
+int* get_x() {
+    return &f.x;
+}
+
+int main() {
+    int *a = get_x();
+    *(a + 1) = 5; // sets y
+}
