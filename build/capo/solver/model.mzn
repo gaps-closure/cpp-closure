@@ -1,9 +1,5 @@
-% TODO: What does Data_ArgPass edge connect to? A Decl_Param? What does Data_Param edge connect to? Do I need it?
-% TODO: Do want Data_Return edge.
-% TODO: confused by XDPointsToAllowed constraint. cdf will always be null unless destination is a function.
 % TODO: to remain consistent with p3, must disallow annotated fields which are function pointers.
 %       Should be captured in constraints already
-% TODO: Potential new node type needed for implicit constructors?
 
 %%%%%%%%%%%%%%%
 % Graph nodes %
@@ -53,16 +49,19 @@ set of int: Control_DestructorInvocation;  % A call to a destructor             
 set of int: Data_PointsTo;                 % A points-to relation                                     | Decl -> Decl
 set of int: Data_DefUse;                   % A def-use relation between statements                    | Stmt.Decl -> Stmt.Ref
 set of int: Data_ArgPass;                  % An argument pass to a call instruction                   | Stmt.Call -> Stmt
-set of int: Data_Return;                   % Connects data being returned to the call site            | Stmt.Return -> Stmt.Call
+set of int: Data_Return;                   % Connects data being returned to the call site            | Stmt -> Stmt.Call
 set of int: Data_Object;                   % Connects a method call/field to the object being invoked | Stmt.Call/Stmt.Field -> Stmt
-set of int: Data_Param;                    % Connects a function-like object to its parameters        | Decl -> Decl.Param
 set of int: Data_FieldAccess;              % A field access                                           | Stmt -> Decl.Field
 set of int: Data_InstanceOf;               % Connects a 'this' instance to a class definition         | Stmt.This -> Decl.Record
 set of int: Data_Decl;                     % Connects a decl statment to a decl                       | Stmt.Decl -> Decl
 set of int: Data_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
 
-set of int: DataEdge; % Spans all data edges
 set of int: EdgeIdx;  % Spans all data and control edges
+
+set of int: DataEdge =
+    Data_PointsTo union Data_DefUse union Data_ArgPass union
+    Data_Return union Data_Object union Data_FieldAccess union
+    Data_InstanceOf union Data_Decl union Data_Child;
 
 % Aggregates of enclave-safe and invocation edges
 set of int: Control_EnclaveSafe =
@@ -74,7 +73,7 @@ set of int: Control_Invocation =
     Control_ConstructorInvocation union Control_DestructorInvocation;
 
 set of int: Data_EnclaveSafe =
-    Data_Child union Data_FieldAccess union Data_InstanceOf union Data_Param union
+    Data_Child union Data_FieldAccess union Data_InstanceOf union
     Data_Object union Data_DefUse union Data_Decl;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,8 +106,8 @@ enum cdf;
 enum GuardOperation = {nullGuardOperation, allow, deny, redact};
 enum Direction      = {nullDirection, bidirectional, egress, ingress};
 
-int: MaxFunParams; % Upper bound on number of parameters for any function in the program
-set of int: paramIdx = 1..MaxFunParams;
+int: MaxFnParams; % Upper bound on number of parameters for any function in the program
+set of int: paramIdx = 1..MaxFnParams;
 
 array[cleLabel]                of Level:          hasLabelLevel;
 array[cleLabel]                of bool:           isFunctionAnnotation;
@@ -264,6 +263,7 @@ constraint :: "XDReturnAllowed"
 constraint :: "EnclaveSafeDataEdges"
     forall (e in Data_EnclaveSafe) (xdedge(e) == false);
 
+% TODO: double check these two
 % Cross-domain argument passing must be allowed by the CDF.
 % Note: The level must change as data goes cross-domain, so we cannot enforce that the taints
 % match. However, currently shareability could change as data goes cross domain. We could additionally
@@ -351,5 +351,7 @@ constraint :: "interFunPointsToTaintsMatch"
 % Stmt.Call/Stmt.Field -> Stmt
 %   - Inter, intra, extern? Could be many
 %   - Constraint: Same taint if field
+% in foo.bar(), Data_Object connects foo object to the Stmt.Call for bar() invocation.
+% Method invocation control edge connects Stmt.Call to the Decl.Method.
 
-% TODO: ALL label
+% TODO: ALL label. Use a function.
