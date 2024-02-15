@@ -55,6 +55,7 @@ class PNode:
     debug: Optional[str]
     annotation: Optional[str]
     range: Optional[Tuple[SourceRef, SourceRef]]
+    param_idx: Optional[int]
 
     def add_to_tree(self, tree: SourceTree) -> None:
         if self.range:
@@ -92,15 +93,15 @@ def pnodes(filename: Path) -> Generator[PNode, None, None]:
             file = row[-3]
             start_off = int(row[-2])
             end_off = int(row[-1])
-            yield PNode(id, type, parent, debug, annot, (SourceRef(file, start_off), SourceRef(file, end_off + 1)))
+            yield PNode(id, type, parent, debug, annot, (SourceRef(file, start_off), SourceRef(file, end_off + 1)), None)
 
 def pedges(filename: Path) -> Generator[PEdge, None, None]:
     with open(filename) as edge_file: 
         for row in csv.reader(edge_file):
             id = int(row[0])
             type = row[1]
-            src = int(row[2])
-            dst = int(row[3])
+            src = int(row[-2])
+            dst = int(row[-1])
             yield PEdge(id, type, src, dst) 
 
 

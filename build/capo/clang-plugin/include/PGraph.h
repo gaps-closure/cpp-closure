@@ -163,6 +163,8 @@ public:
     NodeKind kind;
     NodeCtx ctx; 
 
+    std::optional<size_t> param_idx = std::nullopt; 
+
     std::optional<std::string> qualified_name();
 
     std::optional<NamedDecl*> named_decl();
@@ -174,7 +176,7 @@ public:
     Node(DeclFun decl_fun, NodeCtx ctx = NodeCtx()) : decl_fun(decl_fun), kind(DECL_FUN), ctx(ctx) {}
     Node(DeclRecord decl_record, NodeCtx ctx = NodeCtx()) : decl_record(decl_record), kind(DECL_RECORD), ctx(ctx) {}
     Node(DeclField decl_field, NodeCtx ctx = NodeCtx()) : decl_field(decl_field), kind(DECL_FIELD), ctx(ctx) {}
-    Node(DeclParam decl_param, NodeCtx ctx = NodeCtx()) : decl_param(decl_param), kind(DECL_PARAM), ctx(ctx) {}
+    Node(DeclParam decl_param, NodeCtx ctx = NodeCtx(), size_t param_idx = 0) : decl_param(decl_param), kind(DECL_PARAM), ctx(ctx), param_idx(param_idx) {}
     Node(DeclMethod decl_method, NodeCtx ctx = NodeCtx()) : decl_method(decl_method), kind(DECL_METHOD), ctx(ctx) {}
     Node(DeclConstructor decl_constructor, NodeCtx ctx = NodeCtx()) : decl_constructor(decl_constructor), kind(DECL_CONSTRUCTOR), ctx(ctx) {}
     Node(DeclDestructor decl_destructor, NodeCtx ctx = NodeCtx()) : decl_destructor(decl_destructor), kind(DECL_DESTRUCTOR), ctx(ctx) {}
@@ -218,19 +220,19 @@ struct Edge {
     NodeID src;
     NodeID dst;
     EdgeKind kind;
-    std::optional<size_t> param_idx; 
-    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind), param_idx(std::nullopt) {}
-    Edge(NodeID src, NodeID dst, EdgeKind kind, size_t param_idx) : src(src), dst(dst), kind(kind), param_idx(param_idx) {}
+    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind) {}
 };
 
 class Graph : public cle::Graph<Node, Edge> {
 public:    
     Graph(ASTContext* ctx) : ast_ctx(ctx) { }
     NodeID add_decl(Decl* decl, NodeCtx ctx = NodeCtx()); 
-    using NodeTable = Table<NodeID, std::string, std::string, std::string, 
-        std::string, std::string, std::string,
-        std::string, unsigned int, unsigned int>;
-    using EdgeTable = Table<EdgeID, std::string, std::string, NodeID, NodeID>;
+    using NodeTable = Table<NodeID, 
+        std::string, std::string, std::string,      // node type, debug name, annotation 
+        std::string, std::string, std::string,      // parent decl, parent class, parent function
+        std::string,                                // param idx
+        std::string, unsigned int, unsigned int>;   // filename, start offset, end offset
+    using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
     NodeTable node_table();
     EdgeTable edge_table();
 

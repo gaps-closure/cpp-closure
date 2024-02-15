@@ -133,8 +133,9 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl, NodeCtx ctx) {
         id = add_node(Node(CLENode(decl), ctx));
         auto decl_p = get_node(id).decl_fun.decl;
 
+        size_t idx = 0;
         for(auto param : decl_p->parameters()) {
-            auto pid = add_node(Node(DeclParam(param), ctx.set_parent_function(decl)));
+            auto pid = add_node(Node(DeclParam(param), ctx.set_parent_function(decl), idx++));
             add_edge(Edge(id, pid, STRUCT_PARAM));
         }
 
@@ -227,8 +228,10 @@ NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt, NodeCtx ctx) {
     size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
+        nodes.find(aid)->second.param_idx = idx++;
+        add_edge(Edge(id, aid, DATA_ARGPASS));
     }
+
 
     return id;
 }
@@ -256,7 +259,8 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt, NodeCtx ctx)
     size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
+        nodes.find(aid)->second.param_idx = idx++;
+        add_edge(Edge(id, aid, DATA_ARGPASS));
     }
 
     if(auto obj = stmt->getImplicitObjectArgument()) {
@@ -287,7 +291,8 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt, NodeCtx 
     size_t idx = 0; 
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
+        nodes.find(aid)->second.param_idx = idx++;
+        add_edge(Edge(id, aid, DATA_ARGPASS));
     }
 
     return id;
@@ -605,7 +610,7 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
         std::optional<NodeID> class_id = find_node(node.ctx.parent_class); 
         std::optional<NodeID> function_id = find_node(node.ctx.parent_function); 
 
-        std::string parent_id_str, class_id_str, function_id_str;
+        std::string parent_id_str, class_id_str, function_id_str, param_idx_str;
 
         auto range = node.source_range();  
         auto start_loc = range.getBegin();
@@ -622,11 +627,15 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
             class_id_str = std::to_string(node_id_map[*class_id]);
         if(function_id)
             function_id_str = std::to_string(node_id_map[*function_id]);
+        if(node.param_idx)
+            param_idx_str = std::to_string(*(node.param_idx));
         HetList<cle::NodeID, std::string, std::string, std::string, 
             std::string, std::string, std::string,
+            std::string,
             std::string, unsigned int, unsigned int> 
             row{r_id, nk_name, name, annotation, 
                 parent_id_str, class_id_str, function_id_str,
+                param_idx_str,
                 filename, start_off, end_off}; 
 
         tbl << row;
@@ -650,10 +659,7 @@ pgraph::Graph::EdgeTable pgraph::Graph::edge_table() {
     for(auto [r_id, id] : reordered_edges) {
         auto edge = edges.find(id)->second;
         std::string ek_name = edge_kind_name(edge.kind);
-        std::string param_idx_string;
-        if(edge.param_idx)
-            param_idx_string = std::to_string(*(edge.param_idx));
-        HetList<EdgeID, std::string, std::string, NodeID, NodeID> row{r_id, ek_name, param_idx_string, node_id_map[edge.src], node_id_map[edge.dst]};
+        HetList<EdgeID, std::string, NodeID, NodeID> row{r_id, ek_name, node_id_map[edge.src], node_id_map[edge.dst]};
         tbl << row;
     }
     return tbl;

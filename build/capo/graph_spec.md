@@ -58,7 +58,7 @@ from the LLVM/SVF through use of the debug info.
 | Control.DestructorInvocation  | A call to a destructor                                                                  | Stmt.Call            | Decl.Destructor  | From AST       |
 | Child                         | When a statement has a child not described by the above. Can be pruned out of the graph | Stmt                 | Stmt             | From AST       |
 | Data.DefUse                   | A def-use relation between statements                                                   | Stmt.Decl            | Stmt.Ref         | From AST + SVF |
-| Data.ArgPass                  | An argument pass to a call instruction                                                  | Stmt.Call            | Stmt             | From AST       |
+| Data.ArgPass                  | An argument pass to a call instruction. Destination has a paramater index               | Stmt.Call            | Stmt             | From AST       |
 | Data.Object                   | Connects a method call/field to the object being called upon (e.g. f as in f.foo())     | Stmt.Call/Stmt.Field | Stmt             | From AST       |
 | Data.FieldAccess              | A field access                                                                          | Stmt                 | Decl.Field       | From AST       |
 | Data.InstanceOf               | Connects a 'this' instance to a class definition                                        | Stmt.This            | Decl.Record      | From AST       |
@@ -106,8 +106,8 @@ class Foo()
 
 ## Headers for `nodes.csv` and `edges.csv`
 
-| Node ID | Node Type | Debug Name | Parent Decl ID | Parent Class ID | Parent Function ID | Source Filename | Source Begin Offset | Source End Offset |
-| ------- | --------- | ---------- | -------------- | --------------- | ------------------ | --------------- | ------------------- | ----------------- |
+| Node ID | Node Type | Debug Name | Annotation | Parent Decl ID | Parent Class ID | Parent Function ID | Param Index | Source Filename | Source Begin Offset | Source End Offset |
+| ------- | --------- | ---------- | ---------- | -------------- | --------------- | ------------------ | ----------- | --------------- | ------------------- | ----------------- |
 
-| Edge ID | Edge Type | Param Index | Source Node ID | Edge Node ID |
-| ------- | --------- | ----------- | -------------- | ------------ |
+| Edge ID | Edge Type | Source Node ID | Edge Node ID |
+| ------- | --------- | -------------- | ------------ |
