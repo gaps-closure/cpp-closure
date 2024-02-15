@@ -37,6 +37,8 @@ std::string pgraph::node_kind_name(NodeKind kind) {
         return "Stmt.Decl";
     case STMT_REF:
         return "Stmt.Ref";
+    case STMT_FIELD:
+        return "Stmt.Field";
     case STMT_OTHER:
         return "Stmt.Other";
     case STMT_THIS:
@@ -48,20 +50,20 @@ std::string pgraph::node_kind_name(NodeKind kind) {
 
 std::string pgraph::edge_kind_name(EdgeKind kind) {
     switch(kind) {
-    case RECORD_FIELD:
-        return "Record.Field";
-    case RECORD_METHOD:
-        return "Record.Method";
-    case RECORD_CONSTRUCTOR:
-        return "Record.Constructor";
-    case RECORD_DESTRUCTOR:
-        return "Record.Method";
-    case RECORD_INHERIT:
-        return "Record.Inherit";
+    case STRUCT_FIELD:
+        return "Struct.Field";
+    case STRUCT_METHOD:
+        return "Struct.Method";
+    case STRUCT_CONSTRUCTOR:
+        return "Struct.Constructor";
+    case STRUCT_DESTRUCTOR:
+        return "Struct.Method";
+    case STRUCT_INHERIT:
+        return "Struct.Inherit";
+    case STRUCT_PARAM:
+        return "Struct.Param";
     case DATA_OBJECT:
         return "Data.Object";
-    case DATA_PARAM:
-        return "Data.Param";
     case DATA_DECL:
         return "Data.Decl";
     case DATA_DEFUSE:
@@ -133,7 +135,7 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl, NodeCtx ctx) {
 
         for(auto param : decl_p->parameters()) {
             auto pid = add_node(Node(DeclParam(param), ctx.set_parent_function(decl)));
-            add_edge(Edge(id, pid, DATA_PARAM));
+            add_edge(Edge(id, pid, STRUCT_PARAM));
         }
 
         if(decl->hasBody()) {
@@ -222,9 +224,10 @@ NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt, NodeCtx ctx) {
         add_edge(Edge(id, fid, CONTROL_FUNCTION_INVOCATION));
     }
 
+    size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     return id;
@@ -250,9 +253,10 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt, NodeCtx ctx)
         }
     }
 
+    size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     if(auto obj = stmt->getImplicitObjectArgument()) {
@@ -280,9 +284,10 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt, NodeCtx 
 
     add_edge(Edge(id, cid, CONTROL_CONSTRUCTOR_INVOCATION));
 
+    size_t idx = 0; 
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     return id;
@@ -374,32 +379,32 @@ NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, NodeCtx ctx) {
     for(auto base : decl->bases()) {
         auto ty = base.getType().getTypePtr();
         if(record_definitions.find(ty) != record_definitions.end()) {
-            add_edge(Edge(id, record_definitions[ty], RECORD_INHERIT));
+            add_edge(Edge(id, record_definitions[ty], STRUCT_INHERIT));
         }
     }
     record_definitions.insert(std::pair(decl->getTypeForDecl(), id));
 
     for(auto fdecl : decl->fields()) {
         auto fid = add_field_decl(fdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, fid, RECORD_FIELD));
+        add_edge(Edge(id, fid, STRUCT_FIELD));
     }
 
     for(auto mdecl : decl->methods()) {
         if(clang::isa<CXXConstructorDecl>(mdecl) || clang::isa<CXXDestructorDecl>(mdecl))
             continue;
         auto mid = add_method_decl(mdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, mid, RECORD_METHOD));
+        add_edge(Edge(id, mid, STRUCT_METHOD));
     }
 
     for(auto cdecl : decl->ctors()) {
         auto cid = add_constructor_decl(cdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, cid, RECORD_CONSTRUCTOR));
+        add_edge(Edge(id, cid, STRUCT_CONSTRUCTOR));
     }
 
     if(decl->hasUserDeclaredDestructor()) {
         auto ddecl = decl->getDestructor();
         auto did = add_destructor_decl(ddecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, did, RECORD_CONSTRUCTOR));
+        add_edge(Edge(id, did, STRUCT_CONSTRUCTOR));
     }
     return id;
 }
@@ -532,6 +537,39 @@ int64_t pgraph::Node::clang_node_id(ASTContext* ctx) {
     }
 }
 
+std::map<NodeID, NodeID> pgraph::Graph::reorder_nodes() {
+    std::map<NodeID, NodeID> map;
+    std::map<NodeKind, std::set<NodeID>> buckets;
+    for(auto [id, node] : nodes) {
+        buckets[node.kind].insert(id);
+    }
+    NodeID idx = 1;
+    for(auto [kind, bucket] : buckets) {
+        for(auto id : bucket) {
+            map[id] = idx; 
+            idx++;
+        }
+    }
+    return map;
+}
+
+std::map<EdgeID, EdgeID> pgraph::Graph::reorder_edges() {
+    std::map<EdgeID, EdgeID> map;
+    std::map<EdgeKind, std::set<NodeID>> buckets;
+    for(auto [id, edge] : edges) {
+        buckets[edge.kind].insert(id);
+    }
+    EdgeID idx = 1;
+    for(auto [kind, bucket] : buckets) {
+        for(auto id : bucket) {
+            map[id] = idx; 
+            idx++;
+        }
+    }
+    return map;
+}
+
+
 std::optional<NodeID> pgraph::Graph::find_node(NamedDecl* decl) {
     std::optional<NodeID> parent_id = std::nullopt; 
     if(decl) {
@@ -544,7 +582,15 @@ std::optional<NodeID> pgraph::Graph::find_node(NamedDecl* decl) {
 
 pgraph::Graph::NodeTable pgraph::Graph::node_table() {
     pgraph::Graph::NodeTable tbl;
+    std::map<NodeID, NodeID> node_id_map = reorder_nodes(); 
+    std::vector<std::tuple<NodeID, NodeID>> reordered_nodes;
     for(auto [id, node] : nodes) {
+        if(node_id_map[id] != 0)
+            reordered_nodes.push_back(std::tuple<NodeID, NodeID>(node_id_map[id], id));
+    }
+    std::sort(reordered_nodes.begin(), reordered_nodes.end());
+    for(auto [r_id, id] : reordered_nodes) {
+        auto node = nodes.find(id)->second;
         std::string name = node.qualified_name().value_or("");
         std::string nk_name = node_kind_name(node.kind);
         std::string annotation; 
@@ -571,15 +617,15 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
         auto end_off = manager.getFileOffset(end_loc);
  
         if(parent_id)
-            parent_id_str = std::to_string(*parent_id);
+            parent_id_str = std::to_string(node_id_map[*parent_id]);
         if(class_id)
-            class_id_str = std::to_string(*class_id);
+            class_id_str = std::to_string(node_id_map[*class_id]);
         if(function_id)
-            function_id_str = std::to_string(*function_id);
+            function_id_str = std::to_string(node_id_map[*function_id]);
         HetList<cle::NodeID, std::string, std::string, std::string, 
             std::string, std::string, std::string,
             std::string, unsigned int, unsigned int> 
-            row{id, nk_name, name, annotation, 
+            row{r_id, nk_name, name, annotation, 
                 parent_id_str, class_id_str, function_id_str,
                 filename, start_off, end_off}; 
 
@@ -591,9 +637,23 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
 
 pgraph::Graph::EdgeTable pgraph::Graph::edge_table() {
     pgraph::Graph::EdgeTable tbl;
+    std::map<NodeID, NodeID> node_id_map = reorder_nodes(); 
+    std::map<EdgeID, EdgeID> edge_id_map = reorder_edges(); 
+
+    std::vector<std::tuple<NodeID, NodeID>> reordered_edges;
     for(auto [id, edge] : edges) {
+        if(edge_id_map[id] != 0)
+            reordered_edges.push_back(std::tuple<NodeID, NodeID>(edge_id_map[id], id));
+    }
+    std::sort(reordered_edges.begin(), reordered_edges.end());
+    
+    for(auto [r_id, id] : reordered_edges) {
+        auto edge = edges.find(id)->second;
         std::string ek_name = edge_kind_name(edge.kind);
-        HetList<EdgeID, std::string, NodeID, NodeID> row{id, ek_name, edge.src, edge.dst};
+        std::string param_idx_string;
+        if(edge.param_idx)
+            param_idx_string = std::to_string(*(edge.param_idx));
+        HetList<EdgeID, std::string, std::string, NodeID, NodeID> row{r_id, ek_name, param_idx_string, node_id_map[edge.src], node_id_map[edge.dst]};
         tbl << row;
     }
     return tbl;

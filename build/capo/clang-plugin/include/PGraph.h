@@ -28,10 +28,11 @@ enum NodeKind {
     STMT_CONSTRUCTOR,
     STMT_IMPLICIT_DESTRUCTOR,
     STMT_COMPOUND,
-    STMT_RETURN,
     STMT_REF,
-    STMT_OTHER,
-    STMT_THIS
+    STMT_FIELD,
+    STMT_THIS,
+    STMT_RETURN,
+    STMT_OTHER
 };
 
 std::string node_kind_name(NodeKind kind); 
@@ -190,22 +191,25 @@ public:
 
 
 enum EdgeKind {
-    RECORD_FIELD,
-    RECORD_METHOD,
-    RECORD_CONSTRUCTOR,
-    RECORD_DESTRUCTOR,
-    RECORD_INHERIT,
+    STRUCT_FIELD,
+    STRUCT_METHOD,
+    STRUCT_CONSTRUCTOR,
+    STRUCT_DESTRUCTOR,
+    STRUCT_INHERIT,
+    STRUCT_PARAM,
+    CONTROL_RETURN,
     CONTROL_ENTRY,
     CONTROL_FUNCTION_INVOCATION,
+    CONTROL_METHOD_INVOCATION,
     CONTROL_CONSTRUCTOR_INVOCATION,
     CONTROL_DESTRUCTOR_INVOCATION,
-    CONTROL_METHOD_INVOCATION,
-    DATA_OBJECT,
-    DATA_PARAM,
+    CHILD,
     DATA_DEFUSE,
-    DATA_DECL,
     DATA_ARGPASS,
-    CHILD
+    DATA_OBJECT,
+    DATA_FIELDACCESS,
+    DATA_INSTANCEOF,
+    DATA_DECL,
 };
 
 std::string edge_kind_name(EdgeKind kind); 
@@ -214,7 +218,9 @@ struct Edge {
     NodeID src;
     NodeID dst;
     EdgeKind kind;
-    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind) {}
+    std::optional<size_t> param_idx; 
+    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind), param_idx(std::nullopt) {}
+    Edge(NodeID src, NodeID dst, EdgeKind kind, size_t param_idx) : src(src), dst(dst), kind(kind), param_idx(param_idx) {}
 };
 
 class Graph : public cle::Graph<Node, Edge> {
@@ -224,14 +230,12 @@ public:
     using NodeTable = Table<NodeID, std::string, std::string, std::string, 
         std::string, std::string, std::string,
         std::string, unsigned int, unsigned int>;
-    using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
+    using EdgeTable = Table<EdgeID, std::string, std::string, NodeID, NodeID>;
     NodeTable node_table();
     EdgeTable edge_table();
 
     NodeID add_node(Node&& node) override;
 private:
-
-
 
     NodeID add_record_decl(CXXRecordDecl* decl, NodeCtx ctx = NodeCtx()); 
     NodeID add_function_decl(FunctionDecl* decl, NodeCtx ctx = NodeCtx());
@@ -250,6 +254,8 @@ private:
     NodeID add_other_stmt(Stmt* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_this_stmt(CXXThisExpr* stmt, NodeCtx ctx = NodeCtx());
 
+    std::map<NodeID, NodeID> reorder_nodes();
+    std::map<EdgeID, EdgeID> reorder_edges();
     std::optional<NodeID> find_node(NamedDecl* decl);
 
     template<typename ClangDecl, typename CLENode> 
