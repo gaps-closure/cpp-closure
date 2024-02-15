@@ -178,3 +178,27 @@ def test_alias_basic():
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
+
+
+def test_ref_basic():
+    file_paths = gen_intermediate_files('ref_basic.cpp')
+
+    expected_output = b'7,Data.PointsTo,5,3\n'
+    actual_output = run_points_to_edges(file_paths[NODES_CSV], 
+                                        file_paths[EDGES_CSV], 
+                                        file_paths[SVF_NODES_CSV], 
+                                        file_paths[SVF_EDGES_CSV], 
+                                        file_paths[DECLARES_CSV])
+    assert actual_output == expected_output
+
+
+def test_struct_pointers():
+    file_paths = gen_intermediate_files('struct_pointers.cpp')
+
+    expected_output = b'11,Data.PointsTo,11,1\n'
+    actual_output = run_points_to_edges(file_paths[NODES_CSV], 
+                                        file_paths[EDGES_CSV], 
+                                        file_paths[SVF_NODES_CSV], 
+                                        file_paths[SVF_EDGES_CSV], 
+                                        file_paths[DECLARES_CSV])
+    assert actual_output == expected_output
