@@ -235,8 +235,6 @@ public:
     NodeID add_node(Node&& node) override;
 private:
 
-
-
     NodeID add_record_decl(CXXRecordDecl* decl, NodeCtx ctx = NodeCtx()); 
     NodeID add_function_decl(FunctionDecl* decl, NodeCtx ctx = NodeCtx());
     NodeID add_field_decl(FieldDecl* decl, NodeCtx ctx = NodeCtx()); 
@@ -254,6 +252,8 @@ private:
     NodeID add_other_stmt(Stmt* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_this_stmt(CXXThisExpr* stmt, NodeCtx ctx = NodeCtx());
 
+    std::map<NodeID, NodeID> reorder_nodes();
+    std::map<EdgeID, EdgeID> reorder_edges();
     std::optional<NodeID> find_node(NamedDecl* decl);
 
     template<typename ClangDecl, typename CLENode> 

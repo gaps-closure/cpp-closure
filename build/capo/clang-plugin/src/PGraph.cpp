@@ -534,6 +534,39 @@ int64_t pgraph::Node::clang_node_id(ASTContext* ctx) {
     }
 }
 
+std::map<NodeID, NodeID> pgraph::Graph::reorder_nodes() {
+    std::map<NodeID, NodeID> map;
+    std::map<NodeKind, std::set<NodeID>> buckets;
+    for(auto [id, node] : nodes) {
+        buckets[node.kind].insert(id);
+    }
+    NodeID idx = 1;
+    for(auto [kind, bucket] : buckets) {
+        for(auto id : bucket) {
+            map[id] = idx; 
+            idx++;
+        }
+    }
+    return map;
+}
+
+std::map<EdgeID, EdgeID> pgraph::Graph::reorder_edges() {
+    std::map<EdgeID, EdgeID> map;
+    std::map<EdgeKind, std::set<NodeID>> buckets;
+    for(auto [id, edge] : edges) {
+        buckets[edge.kind].insert(id);
+    }
+    EdgeID idx = 1;
+    for(auto [kind, bucket] : buckets) {
+        for(auto id : bucket) {
+            map[id] = idx; 
+            idx++;
+        }
+    }
+    return map;
+}
+
+
 std::optional<NodeID> pgraph::Graph::find_node(NamedDecl* decl) {
     std::optional<NodeID> parent_id = std::nullopt; 
     if(decl) {
@@ -546,7 +579,15 @@ std::optional<NodeID> pgraph::Graph::find_node(NamedDecl* decl) {
 
 pgraph::Graph::NodeTable pgraph::Graph::node_table() {
     pgraph::Graph::NodeTable tbl;
+    std::map<NodeID, NodeID> node_id_map = reorder_nodes(); 
+    std::vector<std::tuple<NodeID, NodeID>> reordered_nodes;
     for(auto [id, node] : nodes) {
+        if(node_id_map[id] != 0)
+            reordered_nodes.push_back(std::tuple<NodeID, NodeID>(node_id_map[id], id));
+    }
+    std::sort(reordered_nodes.begin(), reordered_nodes.end());
+    for(auto [r_id, id] : reordered_nodes) {
+        auto node = nodes.find(id)->second;
         std::string name = node.qualified_name().value_or("");
         std::string nk_name = node_kind_name(node.kind);
         std::string annotation; 
@@ -573,15 +614,15 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
         auto end_off = manager.getFileOffset(end_loc);
  
         if(parent_id)
-            parent_id_str = std::to_string(*parent_id);
+            parent_id_str = std::to_string(node_id_map[*parent_id]);
         if(class_id)
-            class_id_str = std::to_string(*class_id);
+            class_id_str = std::to_string(node_id_map[*class_id]);
         if(function_id)
-            function_id_str = std::to_string(*function_id);
+            function_id_str = std::to_string(node_id_map[*function_id]);
         HetList<cle::NodeID, std::string, std::string, std::string, 
             std::string, std::string, std::string,
             std::string, unsigned int, unsigned int> 
-            row{id, nk_name, name, annotation, 
+            row{r_id, nk_name, name, annotation, 
                 parent_id_str, class_id_str, function_id_str,
                 filename, start_off, end_off}; 
 
@@ -593,9 +634,20 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
 
 pgraph::Graph::EdgeTable pgraph::Graph::edge_table() {
     pgraph::Graph::EdgeTable tbl;
+    std::map<NodeID, NodeID> node_id_map = reorder_nodes(); 
+    std::map<EdgeID, EdgeID> edge_id_map = reorder_edges(); 
+
+    std::vector<std::tuple<NodeID, NodeID>> reordered_edges;
     for(auto [id, edge] : edges) {
+        if(edge_id_map[id] != 0)
+            reordered_edges.push_back(std::tuple<NodeID, NodeID>(edge_id_map[id], id));
+    }
+    std::sort(reordered_edges.begin(), reordered_edges.end());
+    
+    for(auto [r_id, id] : reordered_edges) {
+        auto edge = edges.find(id)->second;
         std::string ek_name = edge_kind_name(edge.kind);
-        HetList<EdgeID, std::string, NodeID, NodeID> row{id, ek_name, edge.src, edge.dst};
+        HetList<EdgeID, std::string, NodeID, NodeID> row{r_id, ek_name, node_id_map[edge.src], node_id_map[edge.dst]};
         tbl << row;
     }
     return tbl;
