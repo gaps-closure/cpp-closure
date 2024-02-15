@@ -218,7 +218,9 @@ struct Edge {
     NodeID src;
     NodeID dst;
     EdgeKind kind;
-    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind) {}
+    std::optional<size_t> param_idx; 
+    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind), param_idx(std::nullopt) {}
+    Edge(NodeID src, NodeID dst, EdgeKind kind, size_t param_idx) : src(src), dst(dst), kind(kind), param_idx(param_idx) {}
 };
 
 class Graph : public cle::Graph<Node, Edge> {
@@ -228,7 +230,7 @@ public:
     using NodeTable = Table<NodeID, std::string, std::string, std::string, 
         std::string, std::string, std::string,
         std::string, unsigned int, unsigned int>;
-    using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
+    using EdgeTable = Table<EdgeID, std::string, std::string, NodeID, NodeID>;
     NodeTable node_table();
     EdgeTable edge_table();
 

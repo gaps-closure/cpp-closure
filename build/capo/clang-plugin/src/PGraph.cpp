@@ -224,9 +224,10 @@ NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt, NodeCtx ctx) {
         add_edge(Edge(id, fid, CONTROL_FUNCTION_INVOCATION));
     }
 
+    size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     return id;
@@ -252,9 +253,10 @@ NodeID pgraph::Graph::add_member_call_stmt(CXXMemberCallExpr* stmt, NodeCtx ctx)
         }
     }
 
+    size_t idx = 0;
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     if(auto obj = stmt->getImplicitObjectArgument()) {
@@ -282,9 +284,10 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt, NodeCtx 
 
     add_edge(Edge(id, cid, CONTROL_CONSTRUCTOR_INVOCATION));
 
+    size_t idx = 0; 
     for(auto arg : stmt->arguments()) {
         auto aid = add_stmt(arg, ctx);
-        add_edge(Edge(id, aid, DATA_ARGPASS));
+        add_edge(Edge(id, aid, DATA_ARGPASS, idx++));
     }
 
     return id;
@@ -647,7 +650,10 @@ pgraph::Graph::EdgeTable pgraph::Graph::edge_table() {
     for(auto [r_id, id] : reordered_edges) {
         auto edge = edges.find(id)->second;
         std::string ek_name = edge_kind_name(edge.kind);
-        HetList<EdgeID, std::string, NodeID, NodeID> row{r_id, ek_name, node_id_map[edge.src], node_id_map[edge.dst]};
+        std::string param_idx_string;
+        if(edge.param_idx)
+            param_idx_string = std::to_string(*(edge.param_idx));
+        HetList<EdgeID, std::string, std::string, NodeID, NodeID> row{r_id, ek_name, param_idx_string, node_id_map[edge.src], node_id_map[edge.dst]};
         tbl << row;
     }
     return tbl;

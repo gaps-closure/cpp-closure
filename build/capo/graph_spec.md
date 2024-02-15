@@ -103,3 +103,11 @@ class Foo()
   - Data.DefUse edge between (7) and the Decl.Var for `c`
   - Struct.Field edge from (9) to (5)
   - Struct.Method edge from (9) to (8)
+
+## Headers for `nodes.csv` and `edges.csv`
+
+| Node ID | Node Type | Debug Name | Parent Decl ID | Parent Class ID | Parent Function ID | Source Filename | Source Begin Offset | Source End Offset |
+| ------- | --------- | ---------- | -------------- | --------------- | ------------------ | --------------- | ------------------- | ----------------- |
+
+| Edge ID | Edge Type | Param Index | Source Node ID | Edge Node ID |
+| ------- | --------- | ----------- | -------------- | ------------ |
