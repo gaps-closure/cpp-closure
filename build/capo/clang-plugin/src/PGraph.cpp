@@ -37,6 +37,8 @@ std::string pgraph::node_kind_name(NodeKind kind) {
         return "Stmt.Decl";
     case STMT_REF:
         return "Stmt.Ref";
+    case STMT_FIELD:
+        return "Stmt.Field";
     case STMT_OTHER:
         return "Stmt.Other";
     case STMT_THIS:
@@ -48,20 +50,20 @@ std::string pgraph::node_kind_name(NodeKind kind) {
 
 std::string pgraph::edge_kind_name(EdgeKind kind) {
     switch(kind) {
-    case RECORD_FIELD:
-        return "Record.Field";
-    case RECORD_METHOD:
-        return "Record.Method";
-    case RECORD_CONSTRUCTOR:
-        return "Record.Constructor";
-    case RECORD_DESTRUCTOR:
-        return "Record.Method";
-    case RECORD_INHERIT:
-        return "Record.Inherit";
+    case STRUCT_FIELD:
+        return "Struct.Field";
+    case STRUCT_METHOD:
+        return "Struct.Method";
+    case STRUCT_CONSTRUCTOR:
+        return "Struct.Constructor";
+    case STRUCT_DESTRUCTOR:
+        return "Struct.Method";
+    case STRUCT_INHERIT:
+        return "Struct.Inherit";
+    case STRUCT_PARAM:
+        return "Struct.Param";
     case DATA_OBJECT:
         return "Data.Object";
-    case DATA_PARAM:
-        return "Data.Param";
     case DATA_DECL:
         return "Data.Decl";
     case DATA_DEFUSE:
@@ -133,7 +135,7 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl, NodeCtx ctx) {
 
         for(auto param : decl_p->parameters()) {
             auto pid = add_node(Node(DeclParam(param), ctx.set_parent_function(decl)));
-            add_edge(Edge(id, pid, DATA_PARAM));
+            add_edge(Edge(id, pid, STRUCT_PARAM));
         }
 
         if(decl->hasBody()) {
@@ -374,32 +376,32 @@ NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, NodeCtx ctx) {
     for(auto base : decl->bases()) {
         auto ty = base.getType().getTypePtr();
         if(record_definitions.find(ty) != record_definitions.end()) {
-            add_edge(Edge(id, record_definitions[ty], RECORD_INHERIT));
+            add_edge(Edge(id, record_definitions[ty], STRUCT_INHERIT));
         }
     }
     record_definitions.insert(std::pair(decl->getTypeForDecl(), id));
 
     for(auto fdecl : decl->fields()) {
         auto fid = add_field_decl(fdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, fid, RECORD_FIELD));
+        add_edge(Edge(id, fid, STRUCT_FIELD));
     }
 
     for(auto mdecl : decl->methods()) {
         if(clang::isa<CXXConstructorDecl>(mdecl) || clang::isa<CXXDestructorDecl>(mdecl))
             continue;
         auto mid = add_method_decl(mdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, mid, RECORD_METHOD));
+        add_edge(Edge(id, mid, STRUCT_METHOD));
     }
 
     for(auto cdecl : decl->ctors()) {
         auto cid = add_constructor_decl(cdecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, cid, RECORD_CONSTRUCTOR));
+        add_edge(Edge(id, cid, STRUCT_CONSTRUCTOR));
     }
 
     if(decl->hasUserDeclaredDestructor()) {
         auto ddecl = decl->getDestructor();
         auto did = add_destructor_decl(ddecl, ctx.set_parent_class(decl));
-        add_edge(Edge(id, did, RECORD_CONSTRUCTOR));
+        add_edge(Edge(id, did, STRUCT_CONSTRUCTOR));
     }
     return id;
 }
