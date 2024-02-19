@@ -13,69 +13,71 @@ rules = {
     "hasRettaints":                          "CDF {} {} {} as a rettaint.",
     "hasARCtaints":                          "CDF {} {} {} as an ARCtaint.",
     "hasArgtaints":                          "CDF {} {} {} as an argtaint of argument {}.",
-    "VarNodeHasEnclave":                     "Var node must have non-null enclave",
-    "FunctionHasEnclave":                    "Function entry node must have non-null enclave",
-    "InstHasEnclave":                        "Instruction node must have non-null enclave",
-    "ParamHasEnclave":                       "Param node must have non-null enclave",
-    "AnnotationHasNoEnclave":                "Node is an annotation so is placed in the null enclave.",
-    "NodeLevelAtEnclaveLevel":               "The level of a node's taint must match the level of its enclave",
-    "FnAnnotationByUserOnly":                "Only user annotated functions may have function annotations.",
-    "UnannotatedFunContentTaintMatch":       "Node must have the same taint as its function, because the function was not annotated.",
-    "AnnotatedFunContentCoercible":          "The taint on this line must be in the (annotated) function's ARCtaints.",
-    "NonCallControlEnclaveSafe":             "This control edge to an un-annotated node must not be cross-domain.",
-    "XDCallBlest":                           "If this call edge is cross-domain, the destination must be an annotated function.",
-    "XDCallAllowed":                         "If this call edge is cross-domain, the destination function label must have an ALLOW or REDACT CDF at the level of the source taint.",
-    "NonRetNonParmDataEnclaveSafe":          "This is an enclave-safe data edge and may not be cross-domain.",
-    "XDCDataReturnAllowed":                  "If this data return edge is cross-domain, the callee's label must have an ALLOW or REDACT CDF at the level of the callsite's taint.",
-    "XDCParmAllowed":                        "If this argument-passing data edge is cross-domain, the source function label must have an ALLOW or REDACT CDF at the level of the destination taint.",
-    "UnannotatedExternDataEdgeTaintsMatch":  "This is an edge between a function-external node and a node belonging to an un-annotated function, so both nodes must have the same taint.",
-    "AnnotatedExternDataEdgeInArctaints1":   "This is an edge between a function-external node and a node belonging to an annotated function, the external node's taint must be in the function ARCtaints.",
-    "AnnotatedExternDataEdgeInArctaints2":   "This is an edge between a function-external node and a node belonging to an annotated function, the external node's taint must be in the function ARCtaints.",
-    "retEdgeFromUnannotatedTaintsMatch":     "This is a data return edge from an un-annotated callee to a callsite, so the taints must match.",
-    "returnNodeInRettaints":                 "This is a data return edge from an annotated callee, so the taint of the callsite must be in the rettaints of the callee (or the edge is cross-domain).",
-    "argPassInEdgeToUnannotatedTaintsMatch": "This is an ArgPass_In data edge to an un-annotated function, so the taints must match.",
-    "argPassInSourceInArgtaints":            "This is an ArgPass_In data edge to an annotated function, so the incoming taint must be in the argtaints (or it is a cross-domain edge).",
-    "argPassOutFromUnannotatedTaintsMatch":  "This is an ArgPass_Out data edge from an un-annotated function, so the taints must match.",
-    "argPassOutDestInArgtaints":             "This is an ArgPass_Out data edge from an annotated function, so the destination taint must be in the argtaints (or it is a cross-domain edge).",
-    "interFunParameterFieldTaintsMatch":     "This is a Parameter_Field edge between two different functions, so the taints must match.",
-    "IndirectCallSameEnclave":               "This is an indirect call invocation edge, so it may not be a cross-domain.",
-    "PointsToXD":                            "If this points-to edge is cross-domain, the destination must not be a function entry node, and its taint must have ALLOW or REDACT in the CDF corresponding to the source level.",
-    "PointsToTaintsMatch":                   "If this points-to edge is not cross-domain, the taints must match.",
-    "GlobalDefUseTaintsMatch":               "This is a def-use edge between two global variables, so the taints must match."
+    "NodeHasEnclave":                        "Node must have a non-null enclave.",
+    "NodeEnclaveIsFunEnclave":               "Node must have the same enclave as its containing function.",
+    "NodeEnclaveIsClassEnclave":             "Node must have the same enclave as its containing class.",
+    "NodeLevelAtEnclaveLevel":               "The level of the node's taint must match the level of the node's enclave.",
+    "FnAnnotationForFnOnly":                 "Function taints can only be applied to functions.",
+    "FnAnnotationByUserOnly":                "Function annotations can only be made by the developer.",
+    "annotationOnFunctionIsFunAnnotation":   "If the developer annotates this function, it must be with a function annotation.",
+    "annotationOnClassIsNodeAnnotation":     "If the developer annotates this class, it must be with a node annotation.",
+    "annotationOnFieldIsNodeAnnotation":     "If the developer annotates this field, it must be with a node annotation.",
+    "UnannotatedFunContentTaintMatch":       "This node is in an un-annotated function and must share its taint with the function.",
+    "UnannotatedClassTaintsMatch":           "This node is in an un-annotated class and must share its taint with the class.",
+    "noAnnotatedDataForUnannotatedClass":    "This node is in an un-annotated class and may not be annotated.",
+    "unannotatedConstructorGetsClassTaint":  "This constructor is un-annotated and must receive the class taint.",
+    "unannotatedDestructorGetsClassTaint":   "This destructor is un-annotated and must receive the class taint.",
+    "unannotatedMethodGetsClassTaint":       "This method is un-annotated and must receive the class taint.",
+    "AnnotatedFunContentCoercible":          "This node's taint must be in the ARCtaints of its function.",
+    "annotatedConstructorReturnsClassTaint": "This constructor is annotated, so its rettaint must be the class taint.",
+    "inheritTaint":                          "These classes are connected by an inheritance relationship and must share the same taint.",
+    "FunctionPtrSinglyTainted":              "This function has its address taken and may not have a function annotation.",
+    "NonCallRetControlEnclaveSafe":          "This is an enclave-safe control/structural edge; it must not be cross-domain.",
+    "XDCallBlest":                           "If this call is cross-domain, the callee must be annotated.",
+    "XDCallAllowed":                         "If this call is cross-domain, it must be allowed by the callee CDF.",
+    "XDReturnAllowed":                       "If this return is cross-domain, it must be allowed by the caller CDF.",
+    "EnclaveSafeDataEdges":                  "This is an enclave-safe data edge; it must not be cross-domain.",
+    "XDReturnDataAllowed":                   "If this data return is cross-domain, it must be allowed by the caller CDF.",
+    "XDPointsToAllowed":                     "If this points-to edge is cross-domain, it must be allowed by the callee CDF.",
+    "intraFunPointsToTaintsMatch":           "These nodes have a points-to dependency and must share the same taint.",
+    "externExternDataEdgeTaintsMatch":       "These two globals have a data dependency and must share the same taint.",
+    "externDataEdgeTaintsMatch":             "This is a data dependency from a global to a node in a function. The taints must match.",
+    "retEdgeFromUnannotatedTaintsMatch":     "This return is from an un-annotated function; the taint of the return data must match the taint at the callsite.",
+    "returnNodeInRettaints":                 "This return is from an annotated function; the taint of the callsite must be in the callee's rettaints.",
+    "argumentToUnannotatedTaintsMatch":      "This call is to an un-annotated function; the taints of each argument must match the callee's taint.",
+    "argumentInArgtaints":                   "This call is to an annotated function; the taints of each argument must match the callee's argtaints.",
+    "interFunPointsToTaintsMatch":           "These nodes have a points-to dependency and must share the same taint."
 }
 
 def getLine(node_row):
-    if node_row[2] == "FunctionEntry":
-        return node_row[4].split("@",1)[1].split("{",1)[0]
-    return node_row[4]
+    return node_row[2]
 
-def node_provenance(node_id, data):
-    row = data[node_id - 1]
-    fun_id = int(row[5])
+def node_provenance(node_id, nodes):
+    row = nodes[node_id - 1]
+    fun_id = int(row[6])
     fun = "None"
-    if fun_id != 0: fun = getLine(data[fun_id - 1])
+    if fun_id != 0: fun = getLine(nodes[fun_id - 1])
     return row[8], fun, getLine(row), row[3]
 
-def edge_provenance(edge_id, data, nn):
-    row = data[edge_id - 1 + nn]
-    n1, n2 = int(row[6]), int(row[7])
-    f1, fun1, line1, label1 = node_provenance(n1, data)
-    f2, fun2, line2, label2 = node_provenance(n2, data)
+def edge_provenance(edge_id, nodes, edges):
+    row = edges[edge_id - 1]
+    n1, n2 = int(row[2]), int(row[3])
+    f1, fun1, line1, label1 = node_provenance(n1, nodes)
+    f2, fun2, line2, label2 = node_provenance(n2, nodes)
     return f1, fun1, line1, label1, f2, fun2, line2, label2
 
-def explain_single(fml, t, n, args, data, nn):
+def explain_single(fml, t, n, args, nodes, edges):
     assertion = "\n(assert {})".format(fml.sexpr())
     r = rules[n]
     if   t == 'cle':
         return (cle_template + r).format(*args) + assertion
     elif t == 'node':
-        return (node_template + r).format(*node_provenance(args, data)) + assertion
+        return (node_template + r).format(*node_provenance(args, nodes)) + assertion
     elif t == 'edge':
-        return (edge_template + r).format(*edge_provenance(args, data, nn)) + assertion
+        return (edge_template + r).format(*edge_provenance(args, nodes, edges)) + assertion
 
-def explain_all(cs, data):
+def explain_all(cs, nodes, edges):
     s = "; EXPLANATION FOR UNSATISFIABILITY\n"
-    num_nodes = len([r for r in data if r[0] == "Node"])
-    for (fml, (t, n, args)) in cs: s += "\n{}\n".format(explain_single(fml, t, n, args, data, num_nodes))
+    for (fml, (t, n, args)) in cs: s += "\n{}\n".format(explain_single(fml, t, n, args, nodes, edges))
     s += "\n(check-sat)"
     return s
