@@ -1,4 +1,5 @@
 import subprocess
+import os
 
 def cle_to_mzn(cle):
 
@@ -83,8 +84,10 @@ def to_mzn_file(pgraph, cle):
 
 def run_mzn(pgraph, cle, temp_dir):
 
+    model_mzn_file = os.environ["MODEL_MZN"] if "MODEL_MZN" in os.environ else "model.mzn"
+
     mzn_instance = to_mzn_file(pgraph, cle)
-    with open('model.mzn', 'r') as f:
+    with open(model_mzn_file, 'r') as f:
         mzn_model = f.read()
     with open(temp_dir / 'instance.mzn', 'w') as f:
         f.write(mzn_model + "\n\n" + mzn_instance)

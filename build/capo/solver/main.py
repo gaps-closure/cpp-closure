@@ -13,11 +13,9 @@ def parsed_args():
     parser.add_argument('model', help="constraint model to use (supports 'mzn' or 'z3')", choices=['mzn', 'z3'])
     parser.add_argument('graph_nodes', help="path to program graph nodes as a .csv file", type=Path)
     parser.add_argument('graph_edges', help="path to program graph edges as a .csv file", type=Path)
-    parser.add_argument('--max_fn_params', required=True, help="maximum number of function parameters", type=int)
+    parser.add_argument('--max-fn-params', required=True, help="maximum number of function parameters", type=int)
     parser.add_argument('--cle-json',      required=True, type=Path, help='collated CLE JSON')
-    parser.add_argument('--function-args', required=True, type=Path, help='function args text file')
-    parser.add_argument('--one-way',       required=True, type=Path, help='one way text file')
-    parser.add_argument('--temp_dir',      required=True, help="relative path to store outputs", type=Path)
+    parser.add_argument('--temp-dir',      required=True, help="relative path to store outputs", type=Path)
     args = parser.parse_args()
     args.graph_nodes = args.graph_nodes.resolve()
     args.graph_edges = args.graph_edges.resolve()
@@ -35,7 +33,7 @@ def main():
         edges_csv = list(csv.reader(f, quotechar="'", skipinitialspace=True))
 
     pgraph = ProgramGraph(nodes_csv, edges_csv, args.max_fn_params)
-    cle = CLE(args.cle_json, args.function_args, args.max_fn_params, args.one_way)
+    cle = CLE(args.cle_json, args.max_fn_params)
 
     if args.model == 'mzn':
         print("== USING MINIZINC ==\n")
