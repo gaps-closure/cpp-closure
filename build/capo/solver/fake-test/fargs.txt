@@ -1,8 +1,0 @@
-get_frame XDLINKAGE_GET_FRAME 1
-get_metadata XDLINKAGE_GET_METADATA 4
-send_camcmd XDLINKAGE_SEND_CAMCMD 5
-run_videoproc XDLINKAGE_RUN_VIDEOPROC 0
-handle_camera_command FUN_HANDLE_CAMERA_COMMAND 2
-handle_get_metadata FUN_HANDLE_GET_METADATA 2
-wsend_video FUN_WSEND_VIDEO 1
-websrv_main FUN_WEBSRV_MAIN 0

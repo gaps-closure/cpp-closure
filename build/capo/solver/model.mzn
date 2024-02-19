@@ -195,7 +195,7 @@ constraint :: "UnannotatedFunContentTaintMatch"
 
 % All nodes in an un-annotated class must have the taint of the class
 % (may be ALL if multiple taints construct the class, but not if the class accesses tainted data)
-constraint :: "noAnnotatedDataForUnannotatedClass"
+constraint :: "UnannotatedClassTaintsMatch"
     forall (n in NodeIdx where hasClass[n] != 0)
         ((not userAnnotatedNode[hasClass[n]]) -> (taint[n] == taint[hasClass[n]]));
 

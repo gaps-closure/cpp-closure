@@ -1,5 +1,5 @@
 1,Decl.Var,y,,0,0,4,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,19,27
-2,Decl.Var,x,,0,0,4,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,34,44
+2,Decl.Var,x,ORANGE_SHARE,0,0,4,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,34,44
 3,Decl.Var,z,GREEN_SHARE,0,0,4,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,51,60
 4,Decl.Function,main,,0,0,0,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,2,82
 5,Stmt.Decl,,,0,0,4,-1,/home/bflin/gaps/cpp-closure/build/capo/test/alias_basic/alias_basic.cpp,19,28
