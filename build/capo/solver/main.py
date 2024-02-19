@@ -19,7 +19,8 @@ def parsed_args():
     parser.add_argument('--one-way',       required=True, type=Path, help='one way text file')
     parser.add_argument('--temp_dir',      required=True, help="relative path to store outputs", type=Path)
     args = parser.parse_args()
-    args.graph = args.graph.resolve()
+    args.graph_nodes = args.graph_nodes.resolve()
+    args.graph_edges = args.graph_edges.resolve()
     return args
 
 def main():
@@ -45,3 +46,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
+inside cpp-closure/build/capo/solver, run:
+
+rm -rf tmp && mkdir tmp && \
+python3 main.py mzn fake-test/nodes.csv fake-test/edges.csv \
+        --max_fn_params=10 \
+        --cle-json=fake-test/collated.json \
+        --function-args=fake-test/fargs.txt \
+        --one-way=fake-test/oneway.txt \
+        --temp_dir tmp
+'''

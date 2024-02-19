@@ -1,5 +1,15 @@
 % TODO: to remain consistent with p3, must disallow annotated fields which are function pointers.
 %       Should be captured in constraints already
+% TODO: ArgPass edges handling: The callsite node (Stmt_Call) has ArgPass edges to each of its arguments, and each ArgPass edge
+% has a ParamIdx property. The callsite node also has call invocation edges to each potential callee. Re-write the argpass
+% constraints to conform to this.
+% TODO: Properly constrain Data_Object edges. Connects a method call/field to the object being invoked:
+% Stmt.Call/Stmt.Field -> Stmt
+%   - Inter, intra, extern? Could be many
+%   - Constraint: Same taint if field
+% in foo.bar(), Data_Object connects foo object to the Stmt.Call for bar() invocation.
+% Method invocation control edge connects Stmt.Call to the Decl.Method.
+% TODO: ALL label. Use a function.
 
 %%%%%%%%%%%%%%%
 % Graph nodes %
@@ -80,15 +90,15 @@ set of int: Data_EnclaveSafe =
 % Containment mappings for nodes, edge endpoints, parameter indices, and node properties %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-array[Decl_Var]   of int:  isGlobal; % property for Decl_Var
-array[NodeIdx]    of int:  hasClass; % 0 for node not in a class, otherwise maps to the Decl_Record containing the node
+array[NodeIdx]  of bool: isGlobal;
+array[NodeIdx]  of int:  hasClass; % 0 for node not in a class, otherwise maps to the Decl_Record containing the node
 
-array[NodeIdx]    of bool: userAnnotatedNode;
+array[NodeIdx]  of bool: userAnnotatedNode;
 
-array[NodeIdx]    of int:  hasFunction; % 0 for globals, otherwise maps to the Decl_Function/Method/Constructor containing the node
-array[EdgeIdx]    of int:  hasSource;
-array[EdgeIdx]    of int:  hasDest;
-array[Decl_Param] of int:  hasParamIdx;
+array[NodeIdx]  of int:  hasFunction; % 0 for globals, otherwise maps to the Decl_Function/Method/Constructor containing the node
+array[EdgeIdx]  of int:  hasSource;
+array[EdgeIdx]  of int:  hasDest;
+array[NodeIdx]  of int:  hasParamIdx;
 
 % Note: if n is a Decl_Record (i.e. a class declaration), then hasClass[n] == 0 if the class is not contained in another class,
 % but if n is a Decl_Function then hasFunction[n] == n (i.e. a function contains itself but a class does not)
@@ -213,6 +223,7 @@ constraint :: "unannotatedConstructorGetsClassTaint"
         ((hasClass[n] != 0 /\ not userAnnotatedNode[n]) -> (taint[n] == taint[hasClass[n]]));
 
 % Un-annotated destructors get the class taint
+constraint :: "unannotatedDestructorGetsClassTaint"
     forall (n in Decl_Destructor)
         ((hasClass[n] != 0 /\ not userAnnotatedNode[n]) -> (taint[n] == taint[hasClass[n]]));
 
@@ -237,7 +248,7 @@ constraint :: "annotatedConstructorReturnsClassTaint"
     forall (n in Decl_Constructor)
         (userAnnotatedNode[n] ->
             (forall (lvl in Level)
-                ((cdfForRemoteLevel(taint[n], lvl) != nullCdf) -> hasRettaints[cdfForRemoteLevel(taint[n], lvl), taint[hasClass[n]]])));
+                ((cdfForRemoteLevel[taint[n], lvl] != nullCdf) -> hasRettaints[cdfForRemoteLevel[taint[n], lvl], taint[hasClass[n]]])));
 
 % Any function whose address is taken in the program cannot have a function annotation
 constraint :: "FunctionPtrSinglyTainted"
@@ -346,12 +357,3 @@ predicate interFunEdge(DataEdge: e) =
 constraint :: "interFunPointsToTaintsMatch"
     forall (e in Data_PointsTo)
         ((not xdedge(e) /\ interFunEdge(e)) -> esTaint(e) == edTaint(e));
-
-% TODO: Properly constrain Data_Object edges. Connects a method call/field to the object being invoked:
-% Stmt.Call/Stmt.Field -> Stmt
-%   - Inter, intra, extern? Could be many
-%   - Constraint: Same taint if field
-% in foo.bar(), Data_Object connects foo object to the Stmt.Call for bar() invocation.
-% Method invocation control edge connects Stmt.Call to the Decl.Method.
-
-% TODO: ALL label. Use a function.

@@ -40,17 +40,17 @@ class ConflictAnalyzer:
         self.nullEnclave = self.enc2enum['nullEnclave']
         self.hasLabelLevel = [ self.level2enum[e['cle-json']['level']] for e in cle.cle ]
         self.hasEnclaveLevel = list(self.LevelCons)
-        self.isFunctionAnnotation = [ self.isFn(e) for e in cle.cle ]       
+        self.isFunctionAnnotation = [ cle.isFn(e) for e in cle.cle ]       
         self.Cdf, self.CdfCons = EnumSort('Cdf', cle.all_cdfs)
         self.cdf2enum = dict(zip(cle.all_cdfs, self.CdfCons))
         self.nCdfs = len(self.CdfCons)
         self.nullCdf = self.cdf2enum['nullCdf']
         self.hasGuardOperation = [self.gd2enum[gd] for gd in cle.has_guard_op]
-        self.cdfForRemoteLevel = [[self.cdf2enum[cdf] for cdf in cdfs] for cdfs in cle.cdfForRemoteLevel]
-        self.hasRettaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.hasRettaints]
-        self.hasCodtaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.hasCodtaints]
-        self.hasARCtaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.hasARCtaints]
-        self.hasArgtaints = [[[[s == 'true' for s in ls] for ls in lss] for lss in lsss] for lsss in cle.hasArgtaints]
+        self.cdfForRemoteLevel = [[self.cdf2enum[cdf] for cdf in cdfs] for cdfs in cle.cdf_for_remote_level]
+        self.hasRettaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.has_rettaints]
+        self.hasCodtaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.has_codtaints]
+        self.hasARCtaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.has_arctaints]
+        self.hasArgtaints = [[[[s == 'true' for s in ls] for ls in lss] for lss in lsss] for lsss in cle.has_argtaints]
 
         self.encode()
 
@@ -131,7 +131,7 @@ class ConflictAnalyzer:
         # Decision variables
         nodeEnclave = Function('nodeEnclave', id, self.Enclave)
         taint = Function('taint', id, self.Label)
-        self.add([(taint(mkId(i)) == self.label2enum[pdg.node_taints[i]], ('node', 'taints', i)) for i in pdg.node_taints])
+        self.add([(taint(mkId(i)) == self.label2enum[pdg.nodeTaints[i]], ('node', 'taints', i)) for i in pdg.nodeTaints])
 
         # Helpers
         hasFunction            = lambda n: pdg.hasFunction[n - pdg.PDGNode[0]]

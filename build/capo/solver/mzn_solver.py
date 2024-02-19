@@ -35,7 +35,7 @@ def cle_to_mzn(cle):
         mkMznArr('cdfForRemoteLevel', ['cleLabel', 'Level'], cle.cdf_for_remote_level),
         mkMznArr('hasRettaints', ['cdf', 'cleLabel'], cle.has_rettaints),
         mkMznArr('hasCodtaints', ['cdf', 'cleLabel'], cle.has_codtaints),
-        mkMznArr('hasArgtaints', ['cdf', 'parmIdx', 'cleLabel'], cle.has_argtaints),
+        mkMznArr('hasArgtaints', ['cdf', 'paramIdx', 'cleLabel'], cle.has_argtaints),
         mkMznArr('hasARCtaints', ['cdf', 'cleLabel'], cle.has_arctaints)
     ])
 
@@ -51,22 +51,22 @@ def pgraph_to_mzn(pgraph):
         instance.append(",".join([str(e).lower() for e in entries]))
         instance.append("];")
 
-    def add1dArr(n, index, entries):
-        instance.append("{} = array1d({}, [".format(n, index))
-        instance.append(",".join([str(e).lower() for e in entries]))
-        instance.append("]);")
-
     for n in pgraph.n:
         dmn = pgraph.n[n]
-        instance.append("{} = {} .. {};".format(n, str(dmn[0]), str(dmn[-1])))
+        if len(dmn) == 0: instance.append("{} = 0 .. -1;".format(n))
+        else:             instance.append("{} = {} .. {};".format(n, str(dmn[0]), str(dmn[-1])))
+    for e in pgraph.e:
+        dmn = pgraph.e[e]
+        if len(dmn) == 0: instance.append("{} = 0 .. -1;".format(e))
+        else:             instance.append("{} = {} .. {};".format(e, str(dmn[0]), str(dmn[-1])))
 
-    add1dArr("isGlobal", "Decl_Var", pgraph.isGlobal)
+    addArr("isGlobal", pgraph.isGlobal)
     addArr("hasClass", pgraph.hasClass)
     addArr("userAnnotatedNode", pgraph.userAnnotatedNode)
     addArr("hasFunction", pgraph.hasFunction)
     addArr("hasSource", pgraph.hasSource)
     addArr("hasDest", pgraph.hasDest)
-    add1dArr("hasParamIdx", "Decl_Param", pgraph.hasParamIdx)
+    addArr("hasParamIdx", pgraph.hasParamIdx)
 
     # Max function parameters
     instance.append("MaxFnParams = {};".format(pgraph.MaxFnParams))
@@ -88,8 +88,9 @@ def run_mzn(pgraph, cle, temp_dir):
         mzn_model = f.read()
     with open(temp_dir / 'instance.mzn', 'w') as f:
         f.write(mzn_model + mzn_instance)
-    mzn_args = [ 'minizinc', '--no-optimize', '--solver', 'Gecode', temp_dir / 'instance.mzn' ]
+    mzn_args = [ 'minizinc', '--no-optimize', '--solver', 'gurobi', temp_dir / 'instance.mzn' ] # TODO: Don't have gecode locally
     output = subprocess.run(mzn_args, capture_output=True, encoding='utf-8')
     if output.returncode != 0 or "Error" in output.stdout:
-        print("MINIZINC FAILURE:\n")
+        print("MINIZINC FAILURE:")
     print(output.stdout)
+    print(output.stderr)
