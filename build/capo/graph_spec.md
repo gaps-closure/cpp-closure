@@ -50,15 +50,15 @@ from the LLVM/SVF through use of the debug info.
 | Struct.Destructor             | Connects a record to its destructor                                                     | Decl.Record          | Decl.Destructor  | From AST       |
 | Struct.Inherit                | Connects two records by inheritance relation. Type of inheritance given by a property   | Decl.Record          | Decl.Record      | From AST       |
 | Struct.Param                  | Connects a function-like object to its parameters                                       | Decl                 | Decl.Param       | From AST       |
-| Control.Return                | A function/method/constructor/destructor return                                         | Stmt.Return          | Stmt.Call        | From AST       |
+| Struct.Child                  | When a statement has a child not described by the above. Can be pruned out of the graph | Stmt                 | Stmt             | From AST       |
 | Control.Entry                 | Connects a function-like object to it's body                                            | Decl                 | Stmt             | From AST       |
 | Control.FunctionInvocation    | A direct call invocation to a C-style function                                          | Stmt.Call            | Decl.Function    | From AST       |
 | Control.MethodInvocation      | A method call                                                                           | Stmt.Call            | Decl.Method      | From AST       |
 | Control.ConstructorInvocation | A constructor call                                                                      | Stmt.Call            | Decl.Constructor | From AST       |
 | Control.DestructorInvocation  | A call to a destructor                                                                  | Stmt.Call            | Decl.Destructor  | From AST       |
-| Child                         | When a statement has a child not described by the above. Can be pruned out of the graph | Stmt                 | Stmt             | From AST       |
 | Data.DefUse                   | A def-use relation between statements                                                   | Stmt.Decl            | Stmt.Ref         | From AST + SVF |
 | Data.ArgPass                  | An argument pass to a call instruction. Destination has a paramater index               | Stmt.Call            | Stmt             | From AST       |
+| Data.Return                   | Connects a call to its resulting value at the call site                                 | Stmt.Call            | Stmt             | From AST       |
 | Data.Object                   | Connects a method call/field to the object being called upon (e.g. f as in f.foo())     | Stmt.Call/Stmt.Field | Stmt             | From AST       |
 | Data.FieldAccess              | A field access                                                                          | Stmt                 | Decl.Field       | From AST       |
 | Data.InstanceOf               | Connects a 'this' instance to a class definition                                        | Stmt.This            | Decl.Record      | From AST       |

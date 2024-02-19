@@ -29,11 +29,12 @@ set of int: FunOrMethodOrCon = Decl_Function union Decl_Constructor union Decl_M
 % Graph edges %
 %%%%%%%%%%%%%%%
 
-set of int: Record_Field;                  % Connects a record to its field                           | Decl.Record -> Decl.Field
-set of int: Record_Method;                 % Connects a record to its method                          | Decl.Record -> Decl.Method
-set of int: Record_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
-set of int: Record_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
-set of int: Record_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
+set of int: Struct_Field;                  % Connects a record to its field                           | Decl.Record -> Decl.Field
+set of int: Struct_Method;                 % Connects a record to its method                          | Decl.Record -> Decl.Method
+set of int: Struct_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
+set of int: Struct_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
+set of int: Struct_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
+set of int: Struct_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: Control_Return;                % A function/method/constructor/destructor return          | Stmt.Return -> Stmt.Call
 set of int: Control_Entry;                 % Connects a function-like object to it's body             | Decl -> Stmt
@@ -51,26 +52,25 @@ set of int: Data_Object;                   % Connects a method call/field to the
 set of int: Data_FieldAccess;              % A field access                                           | Stmt -> Decl.Field
 set of int: Data_InstanceOf;               % Connects a 'this' instance to a class definition         | Stmt.This -> Decl.Record
 set of int: Data_Decl;                     % Connects a decl statment to a decl                       | Stmt.Decl -> Decl
-set of int: Data_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: EdgeIdx;  % Spans all data and control edges
 
 set of int: DataEdge =
     Data_PointsTo union Data_DefUse union Data_ArgPass union
     Data_Return union Data_Object union Data_FieldAccess union
-    Data_InstanceOf union Data_Decl union Data_Child;
+    Data_InstanceOf union Data_Decl;
 
 % Aggregates of enclave-safe and invocation edges
 set of int: Control_EnclaveSafe =
-    Record_Field union Record_Method union Record_Constructor union
-    Record_Destructor union Record_Inherit union Control_Entry;
+    Struct_Field union Struct_Method union Struct_Constructor union
+    Struct_Destructor union Struct_Inherit union Control_Entry union Struct_Child;
 
 set of int: Control_Invocation = 
     Control_FunctionInvocation union Control_MethodInvocation union
     Control_ConstructorInvocation union Control_DestructorInvocation;
 
 set of int: Data_EnclaveSafe =
-    Data_Child union Data_FieldAccess union Data_InstanceOf union
+    Data_FieldAccess union Data_InstanceOf union
     Data_Object union Data_DefUse union Data_Decl union Data_ArgPass;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -221,7 +221,7 @@ constraint :: "unannotatedMethodGetsClassTaint"
 
 % Classes connected by an inheritance relationship share the same taint
 constraint :: "inheritTaint"
-    forall (e in Record_Inherit) (esTaint(e) == edTaint(e));
+    forall (e in Struct_Inherit) (esTaint(e) == edTaint(e));
 
 % All nodes in an annotated function must have a taint in the ARCtaints
 constraint :: "AnnotatedFunContentCoercible"

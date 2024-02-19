@@ -10,7 +10,7 @@ std::string pgraph::node_kind_name(NodeKind kind) {
     case DECL_VAR:
         return "Decl.Var";
     case DECL_FUN:
-        return "Decl.Fun";
+        return "Decl.Function";
     case DECL_RECORD:
         return "Decl.Record";
     case DECL_FIELD:
@@ -62,6 +62,8 @@ std::string pgraph::edge_kind_name(EdgeKind kind) {
         return "Struct.Inherit";
     case STRUCT_PARAM:
         return "Struct.Param";
+    case STRUCT_CHILD:
+        return "Struct.Child";
     case DATA_OBJECT:
         return "Data.Object";
     case DATA_DECL:
@@ -84,8 +86,6 @@ std::string pgraph::edge_kind_name(EdgeKind kind) {
         return "Control.DestructorInvocation";
     case CONTROL_METHOD_INVOCATION:
         return "Control.MethodInvocation";
-    case CHILD:
-        return "Child";
     default:
         return "Unknown";
     }
@@ -167,7 +167,7 @@ NodeID pgraph::Graph::add_compound_stmt(CompoundStmt* stmt, NodeCtx ctx) {
     auto id = add_node(Node(StmtCompound(stmt), ctx));
     for(auto child : stmt->children()) {
         auto cid = add_stmt(child, ctx);
-        add_edge(Edge(id, cid, CHILD));
+        add_edge(Edge(id, cid, STRUCT_CHILD));
     }
     return id;
 }
@@ -195,7 +195,7 @@ NodeID pgraph::Graph::add_other_stmt(Stmt* stmt, NodeCtx ctx) {
     auto id = add_node(Node(StmtOther(stmt), ctx));
     for(auto child : stmt->children()) {
         auto cid = add_stmt(child, ctx);
-        add_edge(Edge(id, cid, CHILD));
+        add_edge(Edge(id, cid, STRUCT_CHILD));
     }
     return id;
 }
@@ -210,7 +210,7 @@ NodeID pgraph::Graph::add_return_stmt(ReturnStmt* stmt, NodeCtx ctx) {
 
     for(auto child : stmt->children()) {
         auto cid = add_stmt(child, ctx);
-        add_edge(Edge(id, cid, CHILD));
+        add_edge(Edge(id, cid, STRUCT_CHILD));
     }
 
     return id;
@@ -361,14 +361,14 @@ void pgraph::Graph::add_implicit_destructors(Decl* decl, Stmt* body, NodeCtx ctx
                     auto id = clang_to_node_id[clang_id];
                     std::optional<NodeID> parent_id = std::nullopt; 
                     for(auto [eid, edge] : edges) {
-                        if(edge.kind == EdgeKind::CHILD && edge.dst == id) {
+                        if(edge.kind == EdgeKind::STRUCT_CHILD && edge.dst == id) {
                             parent_id = edge.src;
                             break;
                         }
                     }
                     if(parent_id) {
                         auto did = add_node(Node(StmtImplicitDestructor(*dtor), ctx));
-                        add_edge(Edge(*parent_id, did, EdgeKind::CHILD));
+                        add_edge(Edge(*parent_id, did, EdgeKind::STRUCT_CHILD));
                         add_edge(Edge(did, clang_to_node_id[dtor->getDestructorDecl(*ast_ctx)->getID()], EdgeKind::CONTROL_DESTRUCTOR_INVOCATION));
                     }
                 }

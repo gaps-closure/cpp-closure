@@ -12,11 +12,11 @@ class ProgramGraph:
             "Stmt.Compound", "Stmt.Ref", "Stmt.Field", "Stmt.This", "Stmt.Return", "Stmt.Other"
         ]
         edge_types = [
-            "Record.Field", "Record.Method", "Record.Constructor", "Record.Destructor", "Record.Inherit", 
+            "Struct.Field", "Struct.Method", "Struct.Constructor", "Struct.Destructor", "Struct.Inherit", "Struct.Child",
             "Control.Return", "Control.Entry", "Control.FunctionInvocation", 
             "Control.MethodInvocation", "Control.ConstructorInvocation", "Control.DestructorInvocation",
             "Data.PointsTo", "Data.DefUse", "Data.ArgPass", "Data.Return", "Data.Object", 
-            "Data.FieldAccess", "Data.InstanceOf", "Data.Decl", "Data.Child"
+            "Data.FieldAccess", "Data.InstanceOf", "Data.Decl" 
         ]
 
         self.MaxFnParams = max_fn_params
@@ -42,11 +42,11 @@ class ProgramGraph:
                 mzn_id = i + 1
                 assert mzn_id == int(e[0])
                 self.isGlobal.append(False) # TODO: want this to be a property of Decl.Var
-                self.hasParamIdx.append(int(e[7]))
-                self.hasFunction.append(int(e[6]))
+                self.hasParamIdx.append(int(e[7]) if e[7] else -1) 
+                self.hasFunction.append(int(e[6]) if e[6] else 0)
                 if e[3] != "": self.nodeTaints[mzn_id] = e[3]
                 self.userAnnotatedNode.append(e[3] != "")
-                self.hasClass.append(int(e[5]))
+                self.hasClass.append(int(e[5]) if e[5] else 0) 
                 i += 1
             if present: addSet(t, type_start, i)
             else:       addSet(t, 0, -1)
