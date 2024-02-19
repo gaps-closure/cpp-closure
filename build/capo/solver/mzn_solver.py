@@ -87,7 +87,7 @@ def run_mzn(pgraph, cle, temp_dir):
     with open('model.mzn', 'r') as f:
         mzn_model = f.read()
     with open(temp_dir / 'instance.mzn', 'w') as f:
-        f.write(mzn_model + mzn_instance)
+        f.write(mzn_model + "\n\n" + mzn_instance)
     mzn_args = [ 'minizinc', '--no-optimize', '--solver', 'Gecode', temp_dir / 'instance.mzn' ] # TODO: Don't have gecode locally
     output = subprocess.run(mzn_args, capture_output=True, encoding='utf-8')
     if output.returncode != 0 or "Error" in output.stdout:
