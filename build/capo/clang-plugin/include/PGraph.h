@@ -138,6 +138,12 @@ struct StmtThis {
     StmtThis(clang::CXXThisExpr* stmt) : stmt(stmt) {}
 };
 
+struct StmtField {
+    clang::MemberExpr* stmt;
+    StmtField(clang::MemberExpr* stmt) : stmt(stmt) {}
+};
+
+
 
 class Node {
 public:
@@ -159,6 +165,7 @@ public:
         StmtRef stmt_ref;
         StmtOther stmt_other;
         StmtThis stmt_this;
+        StmtField stmt_field;
     };
     NodeKind kind;
     NodeCtx ctx; 
@@ -189,6 +196,7 @@ public:
     Node(StmtRef stmt_ref, NodeCtx ctx = NodeCtx()) : stmt_ref(stmt_ref), kind(STMT_REF), ctx(ctx) {}
     Node(StmtOther stmt_other, NodeCtx ctx = NodeCtx()) : stmt_other(stmt_other), kind(STMT_OTHER), ctx(ctx) {}
     Node(StmtThis stmt_this, NodeCtx ctx = NodeCtx()) : stmt_this(stmt_this), kind(STMT_THIS), ctx(ctx) {}
+    Node(StmtField stmt_field, NodeCtx ctx = NodeCtx()) : stmt_field(stmt_field), kind(STMT_FIELD), ctx(ctx) {}
 };
 
 
@@ -199,7 +207,6 @@ enum EdgeKind {
     STRUCT_DESTRUCTOR,
     STRUCT_INHERIT,
     STRUCT_PARAM,
-    CONTROL_RETURN,
     CONTROL_ENTRY,
     CONTROL_FUNCTION_INVOCATION,
     CONTROL_METHOD_INVOCATION,
@@ -208,6 +215,7 @@ enum EdgeKind {
     CHILD,
     DATA_DEFUSE,
     DATA_ARGPASS,
+    DATA_RETURN,
     DATA_OBJECT,
     DATA_FIELDACCESS,
     DATA_INSTANCEOF,
@@ -255,6 +263,7 @@ private:
     NodeID add_member_call_stmt(CXXMemberCallExpr* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_other_stmt(Stmt* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_this_stmt(CXXThisExpr* stmt, NodeCtx ctx = NodeCtx());
+    NodeID add_member_stmt(MemberExpr* stmt, NodeCtx ctx = NodeCtx());
 
     std::map<NodeID, NodeID> reorder_nodes();
     std::map<EdgeID, EdgeID> reorder_edges();

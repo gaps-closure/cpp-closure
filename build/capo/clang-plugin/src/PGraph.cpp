@@ -70,6 +70,10 @@ std::string pgraph::edge_kind_name(EdgeKind kind) {
         return "Data.DefUse";
     case DATA_ARGPASS:
         return "Data.ArgPass";
+    case DATA_RETURN:
+        return "Data.Return";
+    case DATA_FIELDACCESS:
+        return "Data.FieldAccess";
     case CONTROL_ENTRY:
         return "Control.Entry";
     case CONTROL_FUNCTION_INVOCATION:
@@ -208,7 +212,7 @@ NodeID pgraph::Graph::add_return_stmt(ReturnStmt* stmt, NodeCtx ctx) {
         auto cid = add_stmt(child, ctx);
         add_edge(Edge(id, cid, CHILD));
     }
-   
+
     return id;
 }
 
@@ -231,7 +235,6 @@ NodeID pgraph::Graph::add_call_stmt(CallExpr* stmt, NodeCtx ctx) {
         nodes.find(aid)->second.param_idx = idx++;
         add_edge(Edge(id, aid, DATA_ARGPASS));
     }
-
 
     return id;
 }
@@ -298,6 +301,23 @@ NodeID pgraph::Graph::add_constructor_call_stmt(CXXConstructExpr* stmt, NodeCtx 
     return id;
 }
 
+NodeID pgraph::Graph::add_member_stmt(MemberExpr *stmt, NodeCtx ctx) {
+    auto id = add_node(Node(StmtField(stmt), ctx));
+    if(auto obj = stmt->getBase()) {
+        auto oid = add_stmt(obj, ctx);
+        add_edge(Edge(id, oid, DATA_OBJECT));
+    }
+    if(auto mem = dyn_cast<FieldDecl>(stmt->getMemberDecl())) {
+        if(named_decls.find(mem) != named_decls.end()) {
+            NodeID mid = named_decls[mem];
+            add_edge(Edge(id, mid, DATA_FIELDACCESS));
+        } else {
+            llvm::errs() << "could not find member for field access" << "\n";
+        } 
+    }
+    return id;
+}
+
 
 NodeID pgraph::Graph::add_stmt(Stmt* stmt, NodeCtx ctx) {
     switch(stmt->getStmtClass()) {
@@ -317,6 +337,8 @@ NodeID pgraph::Graph::add_stmt(Stmt* stmt, NodeCtx ctx) {
             return add_member_call_stmt(dyn_cast<CXXMemberCallExpr>(stmt), ctx);
         case Stmt::CXXThisExprClass:
             return add_this_stmt(dyn_cast<CXXThisExpr>(stmt), ctx);
+        case Stmt::MemberExprClass:
+            return add_member_stmt(dyn_cast<MemberExpr>(stmt), ctx);
         default:
             return add_other_stmt(stmt, ctx);
     }
