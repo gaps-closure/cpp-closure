@@ -186,7 +186,7 @@ def run_end_to_end(cpp_file_name) -> subprocess.CompletedProcess[bytes]:
     return run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
 
 def parse_solver_output(output: str) -> list[str]:
-    res = re.search(r'taint=\[((\w+)(,\s+)?)*\]', output)
+    res = re.search(r'taint = \[((\w+)(,\s+)?)*\]', output)
     if res:
         return list(res.groups()[:-1])
     else:
@@ -244,11 +244,16 @@ def test_ref_basic():
     assert actual_output == expected_output
 
 
-
 def test_e2e_alias_basic():
     output = run_end_to_end('alias_basic.cpp')
     taints = parse_solver_output(output.stdout.decode())
+    assert len(taints) > 0
     assert all((taint == "GREEN" for taint in taints))
+
+def test_e2e_simple_fail():
+    output = run_end_to_end('simple_fail.cpp')
+    assert output.stdout.decode().find("UNSATISFIABLE") != -1
+
 
 def test_struct_pointers():
     file_paths = gen_intermediate_files('struct_pointers.cpp')
