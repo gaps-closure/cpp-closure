@@ -619,6 +619,8 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
     for(auto [r_id, id] : reordered_nodes) {
         auto node = nodes.find(id)->second;
         std::string name = node.qualified_name().value_or("");
+        if(name.size() > 0)
+            name = "\"" + name + "\"";
         std::string nk_name = node_kind_name(node.kind);
         std::string annotation; 
         if(node.named_decl()) {
