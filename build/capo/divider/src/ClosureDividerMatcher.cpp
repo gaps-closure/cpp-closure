@@ -219,10 +219,10 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
     string &level = topology.getLevelInProgress();
     string className = record->getNameAsString();
 
-    if (topology.isNameInLevel(className, level) && !record->hasDefinition())
+    if (topology.isInEnclave(className, level) || !record->hasDefinition())
         return true;    // keep it
 
-    // showLoc("RecordDecl......", sm, record);
+    showLoc("RecordDecl......", sm, record);
     replace(record->getSourceRange());
 
     return true;

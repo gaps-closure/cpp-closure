@@ -1,5 +1,5 @@
 {
-  "source_path": "../test/foo",
+  "source_path": "../test/example2",
   "enclaves": [
     {
       "name": "Purple_E",
@@ -14,7 +14,7 @@
       "level":"orange",
       "assignedClasses": [
         "Parent",
-        "Example1"
+        "Example2"
       ]
     }
   ],

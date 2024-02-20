@@ -44,6 +44,7 @@ public:
     }
 
     bool isNameInLevel(string &name, string &level);
+    bool isInEnclave(string &name, string &level);
 
     void parse(string &topology);
     void parseAnnotations(nlohmann::basic_json<> values, vector<Annotation> &list);
