@@ -119,7 +119,7 @@ void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result)
 
     const FieldDecl *field = result.Nodes.getNodeAs<clang::FieldDecl>("FieldDecl");
     if (field && field->hasAttrs() && isInFile(sm, field)) {
-        showLoc("FieldDecl......", sm, field);
+        // showLoc("FieldDecl......", sm, field);
     }
 
     const CXXMethodDecl *method = result.Nodes.getNodeAs<clang::CXXMethodDecl>("CXXMethodDecl");
@@ -222,13 +222,8 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
     if (topology.isNameInLevel(className, level) && !record->hasDefinition())
         return true;    // keep it
 
-    showLoc("RecordDecl......", sm, record);
-    SourceRange range = record->getSourceRange();
-    LangOptions langOpts;
-    llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range),
-                                        sm,
-                                        langOpts).str() << "\n";   
-    replace(range);
+    // showLoc("RecordDecl......", sm, record);
+    replace(record->getSourceRange());
 
     return true;
 }
