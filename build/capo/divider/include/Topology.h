@@ -13,6 +13,7 @@
 #include "nlohmann/json.hpp"
 
 #include "Annotation.h"
+#include "Enclave.h"
 
 using json = nlohmann::json;
 using namespace std;
@@ -21,7 +22,7 @@ class Topology
 {
 protected:
     string sourcePath;
-    vector<string> enclaves;
+    vector<Enclave> enclaves;
     vector<string> levels;
     vector<Annotation> functions;
     vector<Annotation> globalScopedVars;
@@ -47,12 +48,13 @@ public:
     void parse(string &topology);
     void parseAnnotations(nlohmann::basic_json<> values, vector<Annotation> &list);
     void parseStrings(nlohmann::basic_json<> values, vector<string> &list);
+    void parseEnclaves(nlohmann::basic_json<> values, vector<Enclave> &list);
 
     string &getSourcePath() { 
         return this->sourcePath; 
     }
 
-    vector<string> &getEnclaves() { 
+    vector<Enclave> &getEnclaves() { 
         return this->enclaves; 
     }
     

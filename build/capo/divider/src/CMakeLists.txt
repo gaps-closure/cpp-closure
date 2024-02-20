@@ -8,6 +8,7 @@ set(closure-divider_SOURCES
  "${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMatcher.cpp"
  "${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp"
  "${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp"
+ "${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp"
 )
 
 # CONFIGURE THE TOOLS

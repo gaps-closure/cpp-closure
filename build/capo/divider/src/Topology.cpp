@@ -23,7 +23,7 @@ void Topology::parse(string &topology)
             sourcePath = val.get<string>();
         }
         else if (!key.compare("enclaves")) {
-            parseStrings(val, enclaves);
+            parseEnclaves(val, enclaves);
         }
         else if (!key.compare("levels")) {
             parseStrings(val, levels);
@@ -67,6 +67,15 @@ void Topology::parseAnnotations(nlohmann::basic_json<> values, vector<Annotation
         }
 
         list.push_back(annotation);
+    } 
+}
+
+void Topology::parseEnclaves(nlohmann::basic_json<> values, vector<Enclave> &list)
+{
+    for (auto &el2 : values.items()) {
+        Enclave enclave(el2.value());
+
+        list.push_back(enclave);
     } 
 }
 
