@@ -1,6 +1,6 @@
 #include <string>
 
-#include "example2.pb.h"
+#include "codec.h"
 #include "Extra.hpp"
 
 using namespace std;

@@ -3,13 +3,14 @@
  *******************************************************************************/
 #include <string>
 #include <map>
+#include <iostream>
 
-#include "example2.pb.h"
-#include "Extra.hpp"
+#include "codec.h"
+// #include "ExtraShadow.hpp"
+
+// std::map<void *, int> instanceMap;
 
 using namespace std;
-
-std::map<void *, int> instanceMap;
 
 class ClosureRemoteHalMaster
 {
@@ -19,18 +20,14 @@ private:
 public:
     static int instantiateExtra() { /// int oid, String fqcn, Class<?>[] argTypes, Object[] args) {
         uint32_t oid = nextOid++;
+        
+        request_extraconstructor_datatype data;
+        request_extraconstructor_output serialized;
+        size_t len_out;
+        data.oid = oid;
+        request_extraconstructor_data_encode(&serialized, &data, &len_out);
 
-        closure::ClosureMessage message;
-        closure::ExtraConstructor *obj = new closure::ExtraConstructor();
-        obj->set_oid(oid);
-        message.set_allocated_extra_constructor(obj);
-
-        string buf;
-        message.SerializeToString(&buf);
-
-        // GapsTag tag; //  = RPCObjectTag.lookup(obj.getUid());
-        int tag = 0;
-        cout << "RPC instantiateExtra" <<  tag << endl;
+        cout << "RPC instantiateExtra" <<  serialized.trailer.seq << endl;
          
         // String inUri = IPC.getInUri();
         // String outUri = IPC.getOutUri();
@@ -42,17 +39,16 @@ public:
     }
     
     static int invokeExtraGetValue(int oid) {
-        closure::ClosureMessage message;
-        closure::ExtraGetValue *obj = new closure::ExtraGetValue();
-        obj->set_oid(oid);
-        message.set_allocated_extra_getvalue(obj);
+        request_extragetvalue_datatype data;
+        request_extragetvalue_output   serialized;
+        size_t len_out;
+        data.oid = oid;
 
-        string buf;
-        message.SerializeToString(&buf);
+        request_extragetvalue_data_decode(&serialized, &data, &len_out);
 
         // GapsTag tag; //  = RPCObjectTag.lookup(obj.getUid());
         int tag = 0;
-        cout << "RPC invokeExtraGetValue" <<  tag << endl;
+        cout << "RPC instantiateExtra" <<  serialized.trailer.seq << endl;
          
         // String inUri = IPC.getInUri();
         // String outUri = IPC.getOutUri();
@@ -61,15 +57,7 @@ public:
 
         // SDH sdh = halzmq.xdc_blocking_recv();
         
-        string buf; // (data.begin(), data.end());
-        auto retMmessage = std::make_unique<closure::ClosureMessage>();
-        retMmessage->ParseFromString(buf);
-
-        if (!retMmessage->has_extra_getvalue_ret()) {
-            cerr << "unexpected return message" << endl;
-            return INT_MIN; // TODO
-        }
-        const closure::ExtraGetValueRet &getValue = retMmessage->extra_getvalue_ret();
-        return getValue.value();
+        // return getValue.value();
+        return 0;
     }
 };
