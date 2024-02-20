@@ -23,9 +23,12 @@ class ClosureDividerMatcher
     : public clang::ast_matchers::MatchFinder::MatchCallback 
 {
 public:
-    explicit ClosureDividerMatcher(clang::Rewriter &rewriter, Topology topology)
-        : rewriter(rewriter), 
-          topology(topology) {
+    explicit ClosureDividerMatcher(const clang::CompilerInstance &compiler,
+                                   clang::Rewriter &rewriter, Topology topology)
+        :ctx(&compiler.getASTContext()), 
+         langOpts(compiler.getLangOpts()),
+         rewriter(rewriter), 
+         topology(topology) {
     }
     
     void onEndOfTranslationUnit() override;
@@ -33,6 +36,8 @@ public:
     bool isInFile(const clang::SourceManager &sm, const Decl *decl);
 
 private:
+    clang::ASTContext *ctx;
+    clang::LangOptions langOpts;
     clang::Rewriter rewriter;
     Topology topology;
     vector<SourceRange> parentRanges;
@@ -50,6 +55,7 @@ private:
     void showLoc(string msg, const clang::SourceManager &sm, SourceLocation begin, SourceLocation end);
 
     void replace(SourceRange range);
+    SourceLocation findSemiAfterLocation(SourceLocation loc, ASTContext &Ctx, bool IsDecl);
 };
 
 class ClosureMatcherASTConsumer : public clang::ASTConsumer 

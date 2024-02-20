@@ -108,11 +108,9 @@ bool Topology::isInEnclave(string &name, string &level)
             continue;
         for (string assigned : enclave.getAssignedClasses()) {
             if (!assigned.compare(name)) {
-                printf("%s %s found\n", name.c_str(), level.c_str());
                 return true;
             }
         }
     }
-    printf("%s %s not found\n", name.c_str(), level.c_str());
     return false;
 }

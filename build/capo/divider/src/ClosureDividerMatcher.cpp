@@ -23,7 +23,7 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
     clang::Rewriter &rewriter)
     : sm(compiler.getSourceManager()), 
       mainTUOnly(mainFileOnly),
-      matcherHandler(rewriter, topology) 
+      matcherHandler(compiler, rewriter, topology) 
 {
     const auto matcherForMemberAccess = cxxMemberCallExpr(
         callee(memberExpr(member(hasName("oldName"))).bind("MemberAccess")),
@@ -222,10 +222,54 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
     if (topology.isInEnclave(className, level) || !record->hasDefinition())
         return true;    // keep it
 
-    showLoc("RecordDecl......", sm, record);
+    // showLoc("RecordDecl......", sm, record);
     replace(record->getSourceRange());
 
+    SourceLocation loc = findSemiAfterLocation(record->getEndLoc(), *ctx, true);
+    rewriter.ReplaceText (loc, 1, " ");
+
     return true;
+}
+
+/// \arg Loc is the end of a statement range. This returns the location
+/// of the semicolon following the statement.
+/// If no semicolon is found or the location is inside a macro, the returned
+/// source location will be invalid.
+SourceLocation ClosureDividerMatcher::findSemiAfterLocation(SourceLocation loc,
+    ASTContext &Ctx,
+    bool IsDecl) 
+{
+    SourceManager &SM = Ctx.getSourceManager();
+    if (loc.isMacroID()) {
+        if (!Lexer::isAtEndOfMacroExpansion(loc, SM, Ctx.getLangOpts(), &loc))
+            return SourceLocation();
+    }
+    loc = Lexer::getLocForEndOfToken(loc, /*Offset=*/0, SM, Ctx.getLangOpts());
+
+    // Break down the source location.
+    std::pair<FileID, unsigned> locInfo = SM.getDecomposedLoc(loc);
+
+    // Try to load the file buffer.
+    bool invalidTemp = false;
+    StringRef file = SM.getBufferData(locInfo.first, &invalidTemp);
+    if (invalidTemp) 
+        return SourceLocation();
+
+    const char *tokenBegin = file.data() + locInfo.second;
+
+    // Lex from the start of the given location.
+    Lexer lexer(SM.getLocForStartOfFile(locInfo.first), Ctx.getLangOpts(),
+                file.begin(), tokenBegin, file.end());
+    Token tok;
+    lexer.LexFromRawLexer(tok);
+    if (tok.isNot(tok::semi)) {
+        if (!IsDecl) 
+            return SourceLocation();
+        // Declaration may be followed with other tokens; such as an __attribute,
+        // before ending with a semicolon.
+        return findSemiAfterLocation(tok.getLocation(), Ctx, /*IsDecl*/ true);
+    }
+    return tok.getLocation();
 }
 
 void ClosureDividerMatcher::onEndOfTranslationUnit() 
