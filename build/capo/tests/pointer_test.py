@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import subprocess
+import re
 from pathlib import Path
 
 CLANG_14_EXECUTABLE = os.environ['CLANG_14_EXECUTABLE'] 
@@ -153,7 +154,7 @@ def gen_intermediate_files(cpp_file_name):
 
     return file_paths
 
-def run_solver(nodes_csv, edges_csv, collated_json, test_file_name):
+def run_solver(nodes_csv, edges_csv, collated_json, test_file_name) -> subprocess.CompletedProcess[bytes]:
     command = (
         sys.executable,
         SOLVER_SCRIPT,
@@ -167,15 +168,14 @@ def run_solver(nodes_csv, edges_csv, collated_json, test_file_name):
 
     assert status.returncode == 0 
 
-    print(status.stdout.decode())
 
     instance_mzn = f'{TMP_DIR}/{test_file_name}-{INSTANCE_MZN}'
     os.rename(Path(TMP_DIR) / INSTANCE_MZN, instance_mzn)
 
-    return instance_mzn
+    return status
 
 
-def run_end_to_end(cpp_file_name):
+def run_end_to_end(cpp_file_name) -> subprocess.CompletedProcess[bytes]:
     file_paths = gen_intermediate_files(cpp_file_name)
     point_to_edges = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
@@ -183,7 +183,7 @@ def run_end_to_end(cpp_file_name):
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
     modify_edges(file_paths[EDGES_CSV], point_to_edges)  
-    run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
+    return run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
 
 
 
@@ -225,6 +225,13 @@ def test_alias_basic():
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
 
+def parse_solver_output(output: str) -> list[str]:
+    res = re.search(r'taint=\[((\w+)(,\s+)?)*\]', output)
+    if res:
+        return list(res.groups()[:-1])
+    else:
+        return []
+
 
 def test_ref_basic():
     file_paths = gen_intermediate_files('ref_basic.cpp')
@@ -238,8 +245,11 @@ def test_ref_basic():
     assert actual_output == expected_output
 
 
+
 def test_e2e_alias_basic():
-    run_end_to_end('alias_basic.cpp')
+    output = run_end_to_end('alias_basic.cpp')
+    taints = parse_solver_output(output.stdout.decode())
+    assert all((taint == "GREEN" for taint in taints))
 
 
 def test_struct_pointers():
