@@ -121,7 +121,7 @@ def decl_map(graph: PGraph, decl_refs: Iterable[DeclRef]) -> DeclMap:
     def mk() -> Generator[Tuple[LLID, int], None, None]:
         for llid, ref in decl_refs:
             iset: set = graph.source_tree[ref.file][ref.offset]
-            sorted_iset = sorted(iset, key=lambda i: abs(ref.offset - i.begin))
+            sorted_iset = sorted(iset, key=lambda i: (ref.offset - i.begin)**2 + (ref.offset - i.end)**2)
             if len(sorted_iset) > 0:
                 node: PNode = sorted_iset[0].data
                 yield (llid, node.id)

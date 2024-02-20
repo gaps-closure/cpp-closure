@@ -185,8 +185,12 @@ def run_end_to_end(cpp_file_name) -> subprocess.CompletedProcess[bytes]:
     modify_edges(file_paths[EDGES_CSV], point_to_edges)  
     return run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
 
-
-
+def parse_solver_output(output: str) -> list[str]:
+    res = re.search(r'taint=\[((\w+)(,\s+)?)*\]', output)
+    if res:
+        return list(res.groups()[:-1])
+    else:
+        return []
 
 def test_configuration():
     assert os.path.exists(CLANG_14_EXECUTABLE)
@@ -217,7 +221,7 @@ def test_configuration():
 def test_alias_basic():
     file_paths = gen_intermediate_files('alias_basic.cpp')
 
-    expected_output = b'9,Data.PointsTo,2,1\n10,Data.PointsTo,7,1\n'
+    expected_output = b'9,Data.PointsTo,2,1\n10,Data.PointsTo,3,1\n'
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
@@ -225,12 +229,7 @@ def test_alias_basic():
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
 
-def parse_solver_output(output: str) -> list[str]:
-    res = re.search(r'taint=\[((\w+)(,\s+)?)*\]', output)
-    if res:
-        return list(res.groups()[:-1])
-    else:
-        return []
+
 
 
 def test_ref_basic():
@@ -251,16 +250,13 @@ def test_e2e_alias_basic():
     taints = parse_solver_output(output.stdout.decode())
     assert all((taint == "GREEN" for taint in taints))
 
-
 def test_struct_pointers():
     file_paths = gen_intermediate_files('struct_pointers.cpp')
 
-    expected_output = b'12,Data.PointsTo,7,1\n'
+    expected_output = b'12,Data.PointsTo,2,1\n'
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
-
-test_alias_basic()
