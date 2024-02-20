@@ -43,6 +43,8 @@ private:
     bool matchVarDecl(const clang::SourceManager &sm, const VarDecl *var);
     bool matchVarRef(const clang::SourceManager &sm, const DeclRefExpr *varRef);
 
+    bool matchRecordDecl(const clang::SourceManager &sm, const CXXRecordDecl *record);
+
     void showLoc(string msg, const clang::SourceManager &sm, const Decl *decl);
     void showLoc(string msg, const clang::SourceManager &sm, const Expr *expr);
     void showLoc(string msg, const clang::SourceManager &sm, SourceLocation begin, SourceLocation end);

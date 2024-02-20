@@ -117,7 +117,6 @@ void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result)
         matchVarRef(sm, varRef); 
     }
 
-
     const FieldDecl *field = result.Nodes.getNodeAs<clang::FieldDecl>("FieldDecl");
     if (field && field->hasAttrs() && isInFile(sm, field)) {
         showLoc("FieldDecl......", sm, field);
@@ -131,8 +130,8 @@ void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result)
     }
 
     const CXXRecordDecl *record = result.Nodes.getNodeAs<clang::CXXRecordDecl>("CXXRecordDecl");
-    if (record && record->hasAttrs() && isInFile(sm, record)) {
-        showLoc("CXXRecordDecl......", sm, record);
+    if (record && isInFile(sm, record)) { // && record->hasAttrs()) {
+        matchRecordDecl(sm, record); 
     }
 }
 
@@ -146,7 +145,7 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
 
     // showLoc("FunctionDecl......", sm, func);
     SourceRange range = func->getSourceRange();
-    std::string original =	rewriter.getRewrittenText(range);
+    std::string original = rewriter.getRewrittenText(range);
 
     // erase all other than whitespace; 
     // keep source range line numbers intact for matchFunctionCall()
@@ -194,7 +193,7 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
 
     // showLoc("VarDecl......", sm, var);
     SourceRange range = var->getSourceRange();
-    std::string original =	rewriter.getRewrittenText(range);
+    std::string original = rewriter.getRewrittenText(range);
 
     // erase all other than whitespace; 
     // keep source range line numbers intact for matchFunctionCall()
@@ -222,11 +221,38 @@ bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const De
     // TODO: the following line leads to crash
     std::string original = rewriter.getRewrittenText(range);
     
+    // TODO: not complete because of the crash above
     llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range), sm, langOpts).str() << "\n";   
 
     StringRef prefix("_err_handler_rpc_");
     // rewriter.InsertTextBefore(varRef->getBeginLoc(), prefix);
     rewriter.ReplaceText(CharSourceRange::getTokenRange(range), "XXX");
+    return true;
+}
+
+bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, const CXXRecordDecl *record)
+{
+    string &level = topology.getLevelInProgress();
+    string className = record->getNameAsString();
+
+    if (topology.isNameInLevel(className, level) && !record->hasDefinition())
+        return true;    // keep it
+
+    showLoc("RecordDecl......", sm, record);
+    SourceRange range = record->getSourceRange();
+    LangOptions langOpts;
+            llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range),
+                                        sm,
+                                        langOpts).str() << "\n";   
+    std::string original = rewriter.getRewrittenText(range);
+
+    // erase all other than whitespace; 
+    // keep source range line numbers intact for matchFunctionCall()
+    std::regex non_ws("[^\\s]");
+    rewriter.ReplaceText(CharSourceRange::getTokenRange(range),
+                         std::regex_replace(original, non_ws, ""));
+    parentRanges.push_back(range);
+
     return true;
 }
 
