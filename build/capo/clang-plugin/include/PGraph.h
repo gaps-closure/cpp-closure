@@ -138,6 +138,12 @@ struct StmtThis {
     StmtThis(clang::CXXThisExpr* stmt) : stmt(stmt) {}
 };
 
+struct StmtField {
+    clang::MemberExpr* stmt;
+    StmtField(clang::MemberExpr* stmt) : stmt(stmt) {}
+};
+
+
 
 class Node {
 public:
@@ -159,9 +165,12 @@ public:
         StmtRef stmt_ref;
         StmtOther stmt_other;
         StmtThis stmt_this;
+        StmtField stmt_field;
     };
     NodeKind kind;
     NodeCtx ctx; 
+
+    std::optional<size_t> param_idx = std::nullopt; 
 
     std::optional<std::string> qualified_name();
 
@@ -174,7 +183,7 @@ public:
     Node(DeclFun decl_fun, NodeCtx ctx = NodeCtx()) : decl_fun(decl_fun), kind(DECL_FUN), ctx(ctx) {}
     Node(DeclRecord decl_record, NodeCtx ctx = NodeCtx()) : decl_record(decl_record), kind(DECL_RECORD), ctx(ctx) {}
     Node(DeclField decl_field, NodeCtx ctx = NodeCtx()) : decl_field(decl_field), kind(DECL_FIELD), ctx(ctx) {}
-    Node(DeclParam decl_param, NodeCtx ctx = NodeCtx()) : decl_param(decl_param), kind(DECL_PARAM), ctx(ctx) {}
+    Node(DeclParam decl_param, NodeCtx ctx = NodeCtx(), size_t param_idx = 0) : decl_param(decl_param), kind(DECL_PARAM), ctx(ctx), param_idx(param_idx) {}
     Node(DeclMethod decl_method, NodeCtx ctx = NodeCtx()) : decl_method(decl_method), kind(DECL_METHOD), ctx(ctx) {}
     Node(DeclConstructor decl_constructor, NodeCtx ctx = NodeCtx()) : decl_constructor(decl_constructor), kind(DECL_CONSTRUCTOR), ctx(ctx) {}
     Node(DeclDestructor decl_destructor, NodeCtx ctx = NodeCtx()) : decl_destructor(decl_destructor), kind(DECL_DESTRUCTOR), ctx(ctx) {}
@@ -187,6 +196,7 @@ public:
     Node(StmtRef stmt_ref, NodeCtx ctx = NodeCtx()) : stmt_ref(stmt_ref), kind(STMT_REF), ctx(ctx) {}
     Node(StmtOther stmt_other, NodeCtx ctx = NodeCtx()) : stmt_other(stmt_other), kind(STMT_OTHER), ctx(ctx) {}
     Node(StmtThis stmt_this, NodeCtx ctx = NodeCtx()) : stmt_this(stmt_this), kind(STMT_THIS), ctx(ctx) {}
+    Node(StmtField stmt_field, NodeCtx ctx = NodeCtx()) : stmt_field(stmt_field), kind(STMT_FIELD), ctx(ctx) {}
 };
 
 
@@ -197,15 +207,15 @@ enum EdgeKind {
     STRUCT_DESTRUCTOR,
     STRUCT_INHERIT,
     STRUCT_PARAM,
-    CONTROL_RETURN,
+    STRUCT_CHILD,
     CONTROL_ENTRY,
     CONTROL_FUNCTION_INVOCATION,
     CONTROL_METHOD_INVOCATION,
     CONTROL_CONSTRUCTOR_INVOCATION,
     CONTROL_DESTRUCTOR_INVOCATION,
-    CHILD,
     DATA_DEFUSE,
     DATA_ARGPASS,
+    DATA_RETURN,
     DATA_OBJECT,
     DATA_FIELDACCESS,
     DATA_INSTANCEOF,
@@ -218,19 +228,19 @@ struct Edge {
     NodeID src;
     NodeID dst;
     EdgeKind kind;
-    std::optional<size_t> param_idx; 
-    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind), param_idx(std::nullopt) {}
-    Edge(NodeID src, NodeID dst, EdgeKind kind, size_t param_idx) : src(src), dst(dst), kind(kind), param_idx(param_idx) {}
+    Edge(NodeID src, NodeID dst, EdgeKind kind) : src(src), dst(dst), kind(kind) {}
 };
 
 class Graph : public cle::Graph<Node, Edge> {
 public:    
     Graph(ASTContext* ctx) : ast_ctx(ctx) { }
     NodeID add_decl(Decl* decl, NodeCtx ctx = NodeCtx()); 
-    using NodeTable = Table<NodeID, std::string, std::string, std::string, 
-        std::string, std::string, std::string,
-        std::string, unsigned int, unsigned int>;
-    using EdgeTable = Table<EdgeID, std::string, std::string, NodeID, NodeID>;
+    using NodeTable = Table<NodeID, 
+        std::string, std::string, std::string,      // node type, debug name, annotation 
+        std::string, std::string, std::string,      // parent decl, parent class, parent function
+        std::string,                                // param idx
+        std::string, unsigned int, unsigned int>;   // filename, start offset, end offset
+    using EdgeTable = Table<EdgeID, std::string, NodeID, NodeID>;
     NodeTable node_table();
     EdgeTable edge_table();
 
@@ -253,6 +263,7 @@ private:
     NodeID add_member_call_stmt(CXXMemberCallExpr* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_other_stmt(Stmt* stmt, NodeCtx ctx = NodeCtx()); 
     NodeID add_this_stmt(CXXThisExpr* stmt, NodeCtx ctx = NodeCtx());
+    NodeID add_member_stmt(MemberExpr* stmt, NodeCtx ctx = NodeCtx());
 
     std::map<NodeID, NodeID> reorder_nodes();
     std::map<EdgeID, EdgeID> reorder_edges();

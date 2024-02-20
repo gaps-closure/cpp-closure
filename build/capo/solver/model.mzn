@@ -1,6 +1,3 @@
-% TODO: to remain consistent with p3, must disallow annotated fields which are function pointers.
-%       Should be captured in constraints already
-
 %%%%%%%%%%%%%%%
 % Graph nodes %
 %%%%%%%%%%%%%%%
@@ -32,11 +29,12 @@ set of int: FunOrMethodOrCon = Decl_Function union Decl_Constructor union Decl_M
 % Graph edges %
 %%%%%%%%%%%%%%%
 
-set of int: Record_Field;                  % Connects a record to its field                           | Decl.Record -> Decl.Field
-set of int: Record_Method;                 % Connects a record to its method                          | Decl.Record -> Decl.Method
-set of int: Record_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
-set of int: Record_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
-set of int: Record_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
+set of int: Struct_Field;                  % Connects a record to its field                           | Decl.Record -> Decl.Field
+set of int: Struct_Method;                 % Connects a record to its method                          | Decl.Record -> Decl.Method
+set of int: Struct_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
+set of int: Struct_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
+set of int: Struct_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
+set of int: Struct_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: Control_Return;                % A function/method/constructor/destructor return          | Stmt.Return -> Stmt.Call
 set of int: Control_Entry;                 % Connects a function-like object to it's body             | Decl -> Stmt
@@ -54,41 +52,40 @@ set of int: Data_Object;                   % Connects a method call/field to the
 set of int: Data_FieldAccess;              % A field access                                           | Stmt -> Decl.Field
 set of int: Data_InstanceOf;               % Connects a 'this' instance to a class definition         | Stmt.This -> Decl.Record
 set of int: Data_Decl;                     % Connects a decl statment to a decl                       | Stmt.Decl -> Decl
-set of int: Data_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: EdgeIdx;  % Spans all data and control edges
 
 set of int: DataEdge =
     Data_PointsTo union Data_DefUse union Data_ArgPass union
     Data_Return union Data_Object union Data_FieldAccess union
-    Data_InstanceOf union Data_Decl union Data_Child;
+    Data_InstanceOf union Data_Decl;
 
 % Aggregates of enclave-safe and invocation edges
 set of int: Control_EnclaveSafe =
-    Record_Field union Record_Method union Record_Constructor union
-    Record_Destructor union Record_Inherit union Control_Entry;
+    Struct_Field union Struct_Method union Struct_Constructor union
+    Struct_Destructor union Struct_Inherit union Control_Entry union Struct_Child;
 
 set of int: Control_Invocation = 
     Control_FunctionInvocation union Control_MethodInvocation union
     Control_ConstructorInvocation union Control_DestructorInvocation;
 
 set of int: Data_EnclaveSafe =
-    Data_Child union Data_FieldAccess union Data_InstanceOf union
-    Data_Object union Data_DefUse union Data_Decl;
+    Data_FieldAccess union Data_InstanceOf union
+    Data_Object union Data_DefUse union Data_Decl union Data_ArgPass;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Containment mappings for nodes, edge endpoints, parameter indices, and node properties %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-array[Decl_Var]   of int:  isGlobal; % property for Decl_Var
-array[NodeIdx]    of int:  hasClass; % 0 for node not in a class, otherwise maps to the Decl_Record containing the node
+array[NodeIdx]  of bool: isGlobal;
+array[NodeIdx]  of int:  hasClass; % 0 for node not in a class, otherwise maps to the Decl_Record containing the node
 
-array[NodeIdx]    of bool: userAnnotatedNode;
+array[NodeIdx]  of bool: userAnnotatedNode;
 
-array[NodeIdx]    of int:  hasFunction; % 0 for globals, otherwise maps to the Decl_Function/Method/Constructor containing the node
-array[EdgeIdx]    of int:  hasSource;
-array[EdgeIdx]    of int:  hasDest;
-array[Decl_Param] of int:  hasParamIdx;
+array[NodeIdx]  of int:  hasFunction; % 0 for globals, otherwise maps to the Decl_Function/Method/Constructor containing the node
+array[EdgeIdx]  of int:  hasSource;
+array[EdgeIdx]  of int:  hasDest;
+array[NodeIdx]  of int:  hasParamIdx;
 
 % Note: if n is a Decl_Record (i.e. a class declaration), then hasClass[n] == 0 if the class is not contained in another class,
 % but if n is a Decl_Function then hasFunction[n] == n (i.e. a function contains itself but a class does not)
@@ -198,7 +195,7 @@ constraint :: "UnannotatedFunContentTaintMatch"
 
 % All nodes in an un-annotated class must have the taint of the class
 % (may be ALL if multiple taints construct the class, but not if the class accesses tainted data)
-constraint :: "noAnnotatedDataForUnannotatedClass"
+constraint :: "UnannotatedClassTaintsMatch"
     forall (n in NodeIdx where hasClass[n] != 0)
         ((not userAnnotatedNode[hasClass[n]]) -> (taint[n] == taint[hasClass[n]]));
 
@@ -213,6 +210,7 @@ constraint :: "unannotatedConstructorGetsClassTaint"
         ((hasClass[n] != 0 /\ not userAnnotatedNode[n]) -> (taint[n] == taint[hasClass[n]]));
 
 % Un-annotated destructors get the class taint
+constraint :: "unannotatedDestructorGetsClassTaint"
     forall (n in Decl_Destructor)
         ((hasClass[n] != 0 /\ not userAnnotatedNode[n]) -> (taint[n] == taint[hasClass[n]]));
 
@@ -223,7 +221,7 @@ constraint :: "unannotatedMethodGetsClassTaint"
 
 % Classes connected by an inheritance relationship share the same taint
 constraint :: "inheritTaint"
-    forall (e in Record_Inherit) (esTaint(e) == edTaint(e));
+    forall (e in Struct_Inherit) (esTaint(e) == edTaint(e));
 
 % All nodes in an annotated function must have a taint in the ARCtaints
 constraint :: "AnnotatedFunContentCoercible"
@@ -237,7 +235,7 @@ constraint :: "annotatedConstructorReturnsClassTaint"
     forall (n in Decl_Constructor)
         (userAnnotatedNode[n] ->
             (forall (lvl in Level)
-                ((cdfForRemoteLevel(taint[n], lvl) != nullCdf) -> hasRettaints[cdfForRemoteLevel(taint[n], lvl), taint[hasClass[n]]])));
+                ((cdfForRemoteLevel[taint[n], lvl] != nullCdf) -> hasRettaints[cdfForRemoteLevel[taint[n], lvl], taint[hasClass[n]]])));
 
 % Any function whose address is taken in the program cannot have a function annotation
 constraint :: "FunctionPtrSinglyTainted"
@@ -263,16 +261,8 @@ constraint :: "XDReturnAllowed"
 constraint :: "EnclaveSafeDataEdges"
     forall (e in Data_EnclaveSafe) (xdedge(e) == false);
 
-% TODO: double check these two
-% Cross-domain argument passing must be allowed by the CDF.
-% Note: The level must change as data goes cross-domain, so we cannot enforce that the taints
-% match. However, currently shareability could change as data goes cross domain. We could additionally
-% constrain cross-domain data transfers to maintain shareability and only change the level of the taint.
-constraint :: "XDArgAllowed"
-    forall (e in Data_ArgPass)
-        (xdedge(e) -> allowOrRedact(edFunCdf(e)));
-
-% Cross-domain returns must be allowed by the CDF, but the taints need not match. See note above.
+% Cross-domain returns must be allowed by the CDF, but the taints need not match
+% (can't enforce taint matching as the level must change).
 constraint :: "XDReturnDataAllowed"
     forall (e in Data_Return)
         (xdedge(e) -> allowOrRedact(esFunCdf(e)));
@@ -325,19 +315,22 @@ constraint :: "retEdgeFromUnannotatedTaintsMatch"
     forall (e in Data_Return where not sourceAnnotFun(e))
         (esTaint(e) == edTaint(e));
 constraint :: "returnNodeInRettaints"
-    forall (e in Data_Return where sourceAnnotFun(e))
-        (not xdedge(e) -> hasRettaints[esFunCdf(e), edTaint(e)]);
+    forall (e in Data_Return where sourceAnnotFun(e) /\ not xdedge(e))
+        (hasRettaints[esFunCdf(e), edTaint(e)]);
 
+% ArgPass edges: The callsite node (Stmt_Call) has ArgPass edges to each of its arguments, and call invocation edges
+% to each potential callee. The ParamIdx is on the argpass edge destination and the Decl_Param (unused).
 % For non-XD argument passing edges:
-%   -If the destination function is un-annotated, the taints must match
-%   -If the destination function is annotated, the taint on the source node
-%    must be in the argtaints of the corresponding parameter index
-constraint :: "argPassToUnannotatedTaintsMatch"
-    forall (e in Data_ArgPass where not destAnnotFun(e))
-        (esTaint(e) == edTaint(e));
-constraint :: "argPassSourceInArgtaints"
-    forall (e in Data_ArgPass where destAnnotFun(e))
-        (not xdedge(e) -> hasArgtaints[edFunCdf(e), hasParamIdx[hasDest[e]], esTaint(e)]);
+%   -If the destination function is un-annotated, the taint of the argument must match the taint of the destination function
+%   -If the destination function is annotated, the taint of the argument must be in the argtaints of the function at that parameter index
+constraint :: "argumentToUnannotatedTaintsMatch"
+    forall (e in Control_Invocation where not destAnnotFun(e))
+        (forall (arg_e in Data_ArgPass where hasSource[arg_e] == hasSource[e])
+            (edTaint(arg_e) == edTaint(e)));
+constraint :: "argumentInArgtaints"
+    forall (e in Control_Invocation where destAnnotFun(e) /\ not xdedge(e))
+        (forall (arg_e in Data_ArgPass where hasSource[arg_e] == hasSource[e])
+            (hasArgtaints[edFunCdf(e), hasParamIdx[hasDest[arg_e]], taint[hasDest[arg_e]]]));
 
 % Inter-function points-to edges should always have the same taint
 predicate interFunEdge(DataEdge: e) =
@@ -347,11 +340,7 @@ constraint :: "interFunPointsToTaintsMatch"
     forall (e in Data_PointsTo)
         ((not xdedge(e) /\ interFunEdge(e)) -> esTaint(e) == edTaint(e));
 
-% TODO: Properly constrain Data_Object edges. Connects a method call/field to the object being invoked:
-% Stmt.Call/Stmt.Field -> Stmt
-%   - Inter, intra, extern? Could be many
-%   - Constraint: Same taint if field
-% in foo.bar(), Data_Object connects foo object to the Stmt.Call for bar() invocation.
-% Method invocation control edge connects Stmt.Call to the Decl.Method.
-
+% TODO: Properly constrain Data_FieldAccess edges. FieldAccess is special because it's a transfer of data from in
+% to outside of a class which is not mediated by a function. Interacts with the ALL label.
 % TODO: ALL label. Use a function.
+

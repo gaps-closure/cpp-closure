@@ -4,11 +4,13 @@ import glob
 import subprocess
 from pathlib import Path
 
-CLANG_14_EXECUTABLE = os.environ['CLANG_14_EXECUTABLE']
+CLANG_14_EXECUTABLE = os.environ['CLANG_14_EXECUTABLE'] 
 OPT_14_EXECUTABLE = os.environ['OPT_14_EXECUTABLE']
 
 POINTS_TO_EDGES_SCRIPT = os.path.abspath('../points_to_edges.py')
 DUMP_PTG_EXECUTABLE = os.path.abspath('../svf/Release-build/bin/dump-ptg')
+SOLVER_SCRIPT = os.path.abspath('../solver/main.py')
+MODEL_MZN = os.path.abspath('../solver/model.mzn')
 
 CLANG_PLUGIN_SO = os.path.abspath(glob.glob('../clang-plugin/build/CLE.*').pop())
 EXTRACT_DECLARES_PLUGIN_SO = os.path.abspath(glob.glob('../extract_declares/build/ExtractDeclares.*').pop())
@@ -18,6 +20,8 @@ CPP_TEST_SRC_DIR = os.path.abspath('cpp')
 TMP_DIR = 'intermediate'
 EDGES_CSV = 'edges.csv'
 NODES_CSV = 'nodes.csv'
+INSTANCE_MZN = 'instance.mzn'
+COLLATED_JSON = 'collated.json'
 SVF_EDGES_CSV = 'svf_edges.csv'
 SVF_NODES_CSV = 'svf_nodes.csv'
 DECLARES_CSV = 'declares.csv'
@@ -31,6 +35,7 @@ def compile_to_bitcode(cpp_file_name):
         '-g',
         '-O0',
         '-S',
+        '-Wno-unknown-attributes',
         '-emit-llvm',
         f'{CPP_TEST_SRC_DIR}/{cpp_file_name}'
     )
@@ -56,17 +61,20 @@ def run_clang_plugin(cpp_file_name):
         f'{CPP_TEST_SRC_DIR}/{cpp_file_name}'
     )
 
-    status = subprocess.run(command, stdout=subprocess.PIPE)
+
+    status = subprocess.run(command, stdout=subprocess.PIPE, env=os.environ)
     assert status.returncode == 0
 
     cpp_file_wo_ext = Path(cpp_file_name).stem
     os.makedirs(TMP_DIR, exist_ok=True)
     os.rename(EDGES_CSV, f'{TMP_DIR}/{cpp_file_wo_ext}-{EDGES_CSV}')
     os.rename(NODES_CSV, f'{TMP_DIR}/{cpp_file_wo_ext}-{NODES_CSV}')
+    os.rename(COLLATED_JSON, f'{TMP_DIR}/{cpp_file_wo_ext}-{COLLATED_JSON}')
 
     return {
         EDGES_CSV: os.path.abspath(f'{TMP_DIR}/{cpp_file_wo_ext}-{EDGES_CSV}'),
-        NODES_CSV: os.path.abspath(f'{TMP_DIR}/{cpp_file_wo_ext}-{NODES_CSV}')
+        NODES_CSV: os.path.abspath(f'{TMP_DIR}/{cpp_file_wo_ext}-{NODES_CSV}'),
+        COLLATED_JSON: os.path.abspath(f'{TMP_DIR}/{cpp_file_wo_ext}-{COLLATED_JSON}')
     }
 
 
@@ -87,8 +95,6 @@ def run_extract_declares_plugin(ll_file_path):
     os.rename(DECLARES_CSV, f'{TMP_DIR}/{ll_file_wo_ext}-{DECLARES_CSV}')
 
     return os.path.abspath(f'{TMP_DIR}/{ll_file_wo_ext}-{DECLARES_CSV}')
-
-
 
 def run_dump_ptg(bitcode_file):
     ll_file_wo_ext = Path(bitcode_file).stem
@@ -126,7 +132,13 @@ def run_points_to_edges(node_csv, edge_csv, svf_node_csv, svf_edge_csv, declares
     status = subprocess.run(command, stdout=subprocess.PIPE)
     assert status.returncode == 0
 
-    return status.stdout
+    return status.stdout 
+
+
+
+def modify_edges(edge_csv, points_to_edges):
+    with open(edge_csv, 'ab') as efile:
+        efile.write(points_to_edges)
 
 
 def gen_intermediate_files(cpp_file_name):
@@ -140,6 +152,40 @@ def gen_intermediate_files(cpp_file_name):
         assert os.path.isfile(file_path)
 
     return file_paths
+
+def run_solver(nodes_csv, edges_csv, collated_json, test_file_name):
+    command = (
+        sys.executable,
+        SOLVER_SCRIPT,
+        '--max-fn-params', '10',
+        '--cle-json', collated_json,
+        '--temp-dir', TMP_DIR,
+        "mzn",
+        nodes_csv, edges_csv
+    )
+    status = subprocess.run(command, stdout=subprocess.PIPE, env=dict(os.environ, **{"MODEL_MZN": MODEL_MZN}))
+
+    assert status.returncode == 0 
+
+    print(status.stdout.decode())
+
+    instance_mzn = f'{TMP_DIR}/{test_file_name}-{INSTANCE_MZN}'
+    os.rename(Path(TMP_DIR) / INSTANCE_MZN, instance_mzn)
+
+    return instance_mzn
+
+
+def run_end_to_end(cpp_file_name):
+    file_paths = gen_intermediate_files(cpp_file_name)
+    point_to_edges = run_points_to_edges(file_paths[NODES_CSV], 
+                                        file_paths[EDGES_CSV], 
+                                        file_paths[SVF_NODES_CSV], 
+                                        file_paths[SVF_EDGES_CSV], 
+                                        file_paths[DECLARES_CSV])
+    modify_edges(file_paths[EDGES_CSV], point_to_edges)  
+    run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
+
+
 
 
 def test_configuration():
@@ -171,7 +217,7 @@ def test_configuration():
 def test_alias_basic():
     file_paths = gen_intermediate_files('alias_basic.cpp')
 
-    expected_output = b'9,Data.PointsTo,5,3\n10,Data.PointsTo,7,3\n'
+    expected_output = b'9,Data.PointsTo,2,1\n10,Data.PointsTo,7,1\n'
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
@@ -183,22 +229,28 @@ def test_alias_basic():
 def test_ref_basic():
     file_paths = gen_intermediate_files('ref_basic.cpp')
 
-    expected_output = b'7,Data.PointsTo,5,3\n'
+    expected_output = b'7,Data.PointsTo,2,1\n'
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
+
+
+def test_e2e_alias_basic():
+    run_end_to_end('alias_basic.cpp')
 
 
 def test_struct_pointers():
     file_paths = gen_intermediate_files('struct_pointers.cpp')
 
-    expected_output = b'11,Data.PointsTo,11,1\n'
+    expected_output = b'12,Data.PointsTo,7,1\n'
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
     assert actual_output == expected_output
+
+test_alias_basic()

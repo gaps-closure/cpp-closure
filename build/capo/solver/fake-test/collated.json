@@ -1,0 +1,380 @@
+[
+    {
+        "cle-label": "GREEN_NOSHARE",
+        "cle-json": {
+            "level": "green"
+        }
+    },
+    {
+        "cle-label": "ORANGE_NOSHARE",
+        "cle-json": {
+            "level": "orange"
+        }
+    },
+    {
+        "cle-label": "GREEN_SHARE",
+        "cle-json": {
+            "level": "green",
+            "cdf": [
+                {
+                    "remotelevel": "orange",
+                    "direction": "egress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "ORANGE_SHARE",
+        "cle-json": {
+            "level": "orange",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "egress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "XDLINKAGE_RUN_VIDEOPROC",
+        "cle-json": {
+            "level": "orange",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_RUN_VIDEOPROC"
+                    ],
+                    "idempotent": true,
+                    "num_tries": 1,
+                    "timeout": 1000
+                },
+                {
+                    "remotelevel": "orange",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_RUN_VIDEOPROC"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "XDLINKAGE_GET_FRAME",
+        "cle-json": {
+            "level": "orange",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_GET_FRAME"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_GET_FRAME"
+                    ],
+                    "idempotent": true,
+                    "num_tries": 1,
+                    "timeout": 150
+                },
+                {
+                    "remotelevel": "orange",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_GET_FRAME"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_GET_FRAME"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "XDLINKAGE_GET_METADATA",
+        "cle-json": {
+            "level": "orange",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_GET_METADATA"
+                    ],
+                    "idempotent": true,
+                    "num_tries": 1,
+                    "timeout": 150
+                },
+                {
+                    "remotelevel": "orange",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ],
+                        [
+                            "TAG_REQUEST_GET_METADATA"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_GET_METADATA"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "XDLINKAGE_SEND_CAMCMD",
+        "cle-json": {
+            "level": "orange",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_SEND_CAMCMD"
+                    ],
+                    "idempotent": true,
+                    "num_tries": 1,
+                    "timeout": 1000
+                },
+                {
+                    "remotelevel": "orange",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ],
+                        [
+                            "TAG_REQUEST_SEND_CAMCMD"
+                        ]
+                    ],
+                    "codtaints": [
+                        "ORANGE_NOSHARE",
+                        "ORANGE_SHARE"
+                    ],
+                    "rettaints": [
+                        "TAG_RESPONSE_SEND_CAMCMD"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "FUN_HANDLE_CAMERA_COMMAND",
+        "cle-json": {
+            "level": "green",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "GREEN_NOSHARE"
+                        ],
+                        [
+                            "GREEN_NOSHARE"
+                        ]
+                    ],
+                    "codtaints": [
+                        "GREEN_SHARE"
+                    ],
+                    "rettaints": [
+                        "GREEN_NOSHARE"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "FUN_HANDLE_GET_METADATA",
+        "cle-json": {
+            "level": "green",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "GREEN_NOSHARE"
+                        ],
+                        [
+                            "GREEN_NOSHARE"
+                        ]
+                    ],
+                    "codtaints": [
+                        "GREEN_SHARE"
+                    ],
+                    "rettaints": [
+                        "GREEN_NOSHARE"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "FUN_WSEND_VIDEO",
+        "cle-json": {
+            "level": "green",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [
+                        [
+                            "GREEN_NOSHARE"
+                        ]
+                    ],
+                    "codtaints": [
+                        "GREEN_SHARE"
+                    ],
+                    "rettaints": [
+                        "GREEN_NOSHARE"
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "cle-label": "FUN_WEBSRV_MAIN",
+        "cle-json": {
+            "level": "green",
+            "cdf": [
+                {
+                    "remotelevel": "green",
+                    "direction": "ingress",
+                    "guarddirective": {
+                        "operation": "allow"
+                    },
+                    "argtaints": [],
+                    "codtaints": [
+                        "GREEN_SHARE"
+                    ],
+                    "rettaints": [
+                        "GREEN_NOSHARE"
+                    ]
+                }
+            ]
+        }
+    }
+]

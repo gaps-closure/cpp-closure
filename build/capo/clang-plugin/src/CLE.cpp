@@ -23,7 +23,25 @@
 
 using namespace clang;
 
+
 namespace cle {
+
+std::vector<std::tuple<std::string, std::string>> label_pairs;
+void output_label_pairs() {
+    std::ofstream node_csv;
+    node_csv.open("collated.json");
+    node_csv << "[";
+    for(size_t i = 0; i < label_pairs.size(); i++) {
+        auto [label, json] = label_pairs[i];
+        node_csv << "{" << "\"cle-label\": \"" << label << "\","; 
+        node_csv << "\"cle-json\":" << json << "}";
+        if(i != label_pairs.size() - 1)
+            node_csv << ",\n";
+    }
+    node_csv << "]";
+    node_csv.close();
+}
+ 
 struct AttrInfo : public ParsedAttrInfo {
     AttrInfo() {
         NumArgs = 1;
@@ -82,6 +100,8 @@ public:
         edge_csv.open("edges.csv");
         etbl.output_csv(edge_csv, ",", "\n");
         edge_csv.close();
+
+        output_label_pairs();
     }
 };
     
@@ -97,7 +117,42 @@ protected:
     }
 };
 
+
+class Handler : public PragmaHandler {
+public:
+  Handler() : PragmaHandler("cle") { }
+  void HandlePragma(Preprocessor &pp, PragmaIntroducer intro, Token &tok) override {
+    // Handle the pragma
+    pp.Lex(tok);
+    if(pp.getSpelling(tok) != "def") {
+        pp.Diag(tok, diag::err_expected) << "unknown cle directive";
+    }
+    pp.Lex(tok);
+    std::string label = pp.getSpelling(tok);
+    pp.Lex(tok);
+    std::string json;
+    size_t count = 0;
+    std::string tok_str = pp.getSpelling(tok);
+    bool init = true;
+    while(init || count > 0) {
+        if(tok_str == "{")
+            count++;
+        if(tok_str == "}")
+            count--;
+        json += tok_str; 
+        pp.Lex(tok);
+        if(init)
+            init = false;
+        tok_str = pp.getSpelling(tok);
+    }
+    label_pairs.push_back(std::tuple(label, json));
+  }
+ 
 };
+
+
+};
+static PragmaHandlerRegistry::Add<cle::Handler> Z("cle", "cle pragma handler");
 
 static ParsedAttrInfoRegistry::Add<cle::AttrInfo> Y("cle", "cle annotator");
 

@@ -114,11 +114,11 @@ def validate_cle(cle, max_fn_params, fn_args, no_oneway):
 
 class CLE:
 
-    def __init__(self, f_cle_json, f_fn_args, max_fn_params, f_one_way):
+    def __init__(self, f_cle_json, max_fn_params):
 
         cle = json.loads(f_cle_json.read_text())
-        fn_args = f_fn_args.read_text()
-        one_way = f_one_way.read_text()
+        fn_args = "" 
+        one_way = "" 
 
         # Convert functionArgs file contents into a dictionary mapping labels to number of args
         def fnArgsToDict(fn_args):
