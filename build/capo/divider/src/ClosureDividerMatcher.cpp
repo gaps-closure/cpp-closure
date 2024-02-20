@@ -144,15 +144,7 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
         return true;    // keep it
 
     // showLoc("FunctionDecl......", sm, func);
-    SourceRange range = func->getSourceRange();
-    std::string original = rewriter.getRewrittenText(range);
-
-    // erase all other than whitespace; 
-    // keep source range line numbers intact for matchFunctionCall()
-    std::regex non_ws("[^\\s]");
-    rewriter.ReplaceText(CharSourceRange::getTokenRange(range),
-                         std::regex_replace(original, non_ws, ""));
-    parentRanges.push_back(range);
+    replace(func->getSourceRange());
 
     return true;
 }
@@ -192,22 +184,14 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
         return true;    // keep it
 
     // showLoc("VarDecl......", sm, var);
-    SourceRange range = var->getSourceRange();
-    std::string original = rewriter.getRewrittenText(range);
-
-    // erase all other than whitespace; 
-    // keep source range line numbers intact for matchFunctionCall()
-    std::regex non_ws("[^\\s]");
-    rewriter.ReplaceText(CharSourceRange::getTokenRange(range),
-                         std::regex_replace(original, non_ws, ""));
-    parentRanges.push_back(range);
+    replace(var->getSourceRange());
 
     return true;
 }
 
 bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const DeclRefExpr *varRef)
 {
-    return true;
+    return true;  // TODO
 
     string &level = topology.getLevelInProgress();
     string varName = varRef->getNameInfo().getAsString();
@@ -225,8 +209,8 @@ bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const De
     llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range), sm, langOpts).str() << "\n";   
 
     StringRef prefix("_err_handler_rpc_");
-    // rewriter.InsertTextBefore(varRef->getBeginLoc(), prefix);
-    rewriter.ReplaceText(CharSourceRange::getTokenRange(range), "XXX");
+    rewriter.InsertTextBefore(varRef->getBeginLoc(), prefix);
+    // rewriter.ReplaceText(CharSourceRange::getTokenRange(range), "XXX");
     return true;
 }
 
@@ -241,17 +225,10 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
     showLoc("RecordDecl......", sm, record);
     SourceRange range = record->getSourceRange();
     LangOptions langOpts;
-            llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range),
+    llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range),
                                         sm,
                                         langOpts).str() << "\n";   
-    std::string original = rewriter.getRewrittenText(range);
-
-    // erase all other than whitespace; 
-    // keep source range line numbers intact for matchFunctionCall()
-    std::regex non_ws("[^\\s]");
-    rewriter.ReplaceText(CharSourceRange::getTokenRange(range),
-                         std::regex_replace(original, non_ws, ""));
-    parentRanges.push_back(range);
+    replace(range);
 
     return true;
 }
@@ -277,6 +254,19 @@ bool ClosureDividerMatcher::isInFile(const clang::SourceManager &sm, const Decl 
 
     return (file.length() >= target.length() &&
             !file.compare(file.length() - target.length(), target.length(), target));
+}
+
+void ClosureDividerMatcher::replace(SourceRange range)
+{
+    std::string original = rewriter.getRewrittenText(range);
+
+    // erase all other than whitespace; 
+    // keep source range line numbers intact for matchFunctionCall()
+    std::regex non_ws("[^\\s]");
+    string modified = std::regex_replace(original, non_ws, " ");
+    rewriter.ReplaceText(CharSourceRange::getTokenRange(range), modified);
+
+    parentRanges.push_back(range);
 }
 
 void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, const Decl *decl)

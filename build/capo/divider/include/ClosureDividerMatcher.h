@@ -48,6 +48,8 @@ private:
     void showLoc(string msg, const clang::SourceManager &sm, const Decl *decl);
     void showLoc(string msg, const clang::SourceManager &sm, const Expr *expr);
     void showLoc(string msg, const clang::SourceManager &sm, SourceLocation begin, SourceLocation end);
+
+    void replace(SourceRange range);
 };
 
 class ClosureMatcherASTConsumer : public clang::ASTConsumer 
