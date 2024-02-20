@@ -208,6 +208,8 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
 
 bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const DeclRefExpr *varRef)
 {
+    return true;
+
     string &level = topology.getLevelInProgress();
     string varName = varRef->getNameInfo().getAsString();
 
@@ -217,6 +219,7 @@ bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const De
 
     SourceRange range = varRef->getSourceRange();
     LangOptions langOpts;
+    // TODO: the following line leads to crash
     std::string original = rewriter.getRewrittenText(range);
     
     llvm::outs() << Lexer::getSourceText(CharSourceRange::getTokenRange(range), sm, langOpts).str() << "\n";   
