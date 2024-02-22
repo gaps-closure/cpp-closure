@@ -124,7 +124,7 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl, NodeCtx ctx) {
             id = named_decls[redecl];
             auto node = get_node(id);
             if(decl_with_body != nullptr) {
-                replace_node(id, Node(CLENode(static_cast<ClangDecl*>(decl_with_body)), ctx));
+                replace_node(id, Node(CLENode(static_cast<ClangDecl*>(decl_with_body)), ctx.set_parent_function(decl_with_body)));
                 auto cid = add_stmt(decl_with_body->getBody(), ctx.set_parent_function(decl_with_body));
                 add_edge(Edge(id, cid, CONTROL_ENTRY));
             }
@@ -134,7 +134,7 @@ NodeID pgraph::Graph::add_function_like(ClangDecl* decl, NodeCtx ctx) {
     }
 
     if(!found_prev_decl) {
-        id = add_node(Node(CLENode(decl), ctx));
+        id = add_node(Node(CLENode(decl), ctx.set_parent_function(decl_with_body)));
         auto decl_p = get_node(id).decl_fun.decl;
 
         size_t idx = 0;
