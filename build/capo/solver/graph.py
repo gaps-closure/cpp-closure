@@ -12,7 +12,7 @@ class ProgramGraph:
             "Stmt.Compound", "Stmt.Ref", "Stmt.Field", "Stmt.This", "Stmt.Return", "Stmt.Other"
         ]
         edge_types = [
-            "Struct.Field", "Struct.Method", "Struct.Constructor", "Struct.Destructor", "Struct.Inherit", "Struct.Child",
+            "Struct.Field", "Struct.Method", "Struct.Constructor", "Struct.Destructor", "Struct.Inherit", "Struct.Param", "Struct.Child",
             "Control.Return", "Control.Entry", "Control.FunctionInvocation", 
             "Control.MethodInvocation", "Control.ConstructorInvocation", "Control.DestructorInvocation",
             "Data.PointsTo", "Data.DefUse", "Data.ArgPass", "Data.Return", "Data.Object", 

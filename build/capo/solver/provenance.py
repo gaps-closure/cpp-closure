@@ -56,7 +56,7 @@ def getLine(node_row):
 
 def node_provenance(node_id, nodes):
     row = nodes[node_id - 1]
-    fun_id = int(row[6])
+    fun_id = int(row[6]) if row[6] else 0
     fun = "None"
     if fun_id != 0: fun = getLine(nodes[fun_id - 1])
     return row[8], fun, getLine(row), row[3]

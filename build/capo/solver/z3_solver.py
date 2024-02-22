@@ -2,7 +2,7 @@ from time import time
 from math import log2, ceil
 
 from provenance import explain_all
-from z3 import *
+from z3 import * 
 
 class ConflictAnalyzer:
 
@@ -132,7 +132,7 @@ class ConflictAnalyzer:
         eUnion = lambda es: sum([pdg.e[e] for e in es], [])
         pdg.FunctionLike = nUnion(['Decl_Function', 'Decl_Constructor', 'Decl_Method', 'Decl_Destructor'])
         pdg.DataEdge = eUnion(['Data_PointsTo', 'Data_DefUse', 'Data_ArgPass', 'Data_Return', 'Data_Object', 'Data_FieldAccess', 'Data_InstanceOf', 'Data_Decl'])
-        pdg.Control_EnclaveSafe = eUnion(['Struct_Field', 'Struct_Method', 'Struct_Constructor', 'Struct_Destructor', 'Struct_Inherit', 'Control_Entry', 'Struct_Child'])
+        pdg.Control_EnclaveSafe = eUnion(['Struct_Field', 'Struct_Method', 'Struct_Constructor', 'Struct_Destructor', 'Struct_Inherit', 'Control_Entry', 'Struct_Child', 'Struct_Param'])
         pdg.Control_Invocation = eUnion(['Control_FunctionInvocation', 'Control_MethodInvocation', 'Control_ConstructorInvocation', 'Control_DestructorInvocation'])
         pdg.Data_EnclaveSafe = eUnion(['Data_FieldAccess', 'Data_InstanceOf', 'Data_Object', 'Data_DefUse', 'Data_Decl', 'Data_ArgPass'])
 
@@ -201,16 +201,16 @@ class ConflictAnalyzer:
                     self.add([(hasArgtaints(self.CdfCons[cdf], mkId(i), self.LabelCons[lbl]) == v, ('cle', 'hasArgtaints', (str(self.CdfCons[cdf]), "has" if v else "does not have", str(self.LabelCons[lbl]), str(i))))])
 
         isPinned = Function('isPinned', id, b)
-        for r in range(len(pdg.n['Decl_Record'])):
-            v = True
+        for r in pdg.n['Decl_Record']:
+            v = False
             if userAnnotatedNode(r):
-                v = False
-            for n in range(len(pdg.n['NodeIdx'])):
+                v = True
+            for n in pdg.n['NodeIdx']:
                 if hasClass(n) == r and userAnnotatedNode(n):
-                    v = False
-            for e in range(len(pdg.e['EdgeIdx'])):
+                    v = True
+            for e in pdg.e['EdgeIdx']:
                 if hasClass(hasSource(e)) == r and hasClass(hasDest(e)) != r:
-                    v = False
+                    v = True
             self.add([(isPinned(mkId(r)) == v, ('cle', 'isPinned', (str(r), "is not eligible" if v else "is eligible")))])
 
         # Shorthands over UIFs

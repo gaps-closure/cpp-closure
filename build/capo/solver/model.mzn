@@ -34,6 +34,7 @@ set of int: Struct_Method;                 % Connects a record to its method    
 set of int: Struct_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
 set of int: Struct_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
 set of int: Struct_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
+set of int: Struct_Param;                  % Connects a function-like object to its parameter         | Decl -> Decl.Param
 set of int: Struct_Child;                  % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: Control_Return;                % A function/method/constructor/destructor return          | Stmt.Return -> Stmt.Call
@@ -63,7 +64,7 @@ set of int: DataEdge =
 % Aggregates of enclave-safe and invocation edges
 set of int: Control_EnclaveSafe =
     Struct_Field union Struct_Method union Struct_Constructor union
-    Struct_Destructor union Struct_Inherit union Control_Entry union Struct_Child;
+    Struct_Destructor union Struct_Inherit union Control_Entry union Struct_Child union Struct_Param;
 
 set of int: Control_Invocation = 
     Control_FunctionInvocation union Control_MethodInvocation union
