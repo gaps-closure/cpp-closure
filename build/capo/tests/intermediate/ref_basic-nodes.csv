@@ -1,0 +1,8 @@
+1,Decl.Var,"y",,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,17,25
+2,Decl.Var,"x",,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,32,41
+3,Decl.Function,"main",,,,,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,0,59
+4,Stmt.Decl,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,17,26
+5,Stmt.Decl,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,32,42
+6,Stmt.Compound,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,11,59
+7,Stmt.Return,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,49,56
+8,Stmt.Other,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/ref_basic.cpp,56,56

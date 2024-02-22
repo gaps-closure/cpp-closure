@@ -1,0 +1,12 @@
+1,Struct.Field,4,5
+2,Struct.Child,8,6
+3,Struct.Child,11,10
+4,Struct.Child,11,12
+5,Struct.Child,8,11
+6,Struct.Child,8,7
+7,Control.Entry,3,8
+8,Data.DefUse,9,1
+9,Data.Object,10,9
+10,Data.FieldAccess,10,5
+11,Data.Decl,6,1
+12,Data.Decl,7,2

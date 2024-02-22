@@ -1,0 +1,10 @@
+1,Decl.Var,"y",GREEN,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,106,157
+2,Decl.Var,"x",ORANGE,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,165,219
+3,Decl.Var,"z",,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,226,235
+4,Decl.Function,"main",,,,,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,89,257
+5,Stmt.Decl,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,106,158
+6,Stmt.Decl,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,165,220
+7,Stmt.Decl,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,226,236
+8,Stmt.Compound,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,100,257
+9,Stmt.Return,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,247,254
+10,Stmt.Other,,,4,,4,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/simple_fail.cpp,254,254

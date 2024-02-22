@@ -1,0 +1,99 @@
+0,ValNode,pointer,'i8* null',,,,
+1,DummyValNode,pointer,,,,
+2,DummyObjNode,pointer,,,,
+3,DummyObjNode,pointer,,,,
+4,ValNode,pointer,'; Function Attrs: mustprogress noinline norecurse optnone uwtable
+define dso_local noundef i32 @main() #0 !dbg !26 {
+  %1 = alloca i32, align 4
+  %2 = alloca %class.Foo, align 4
+  store i32 0, i32* %1, align 4
+  call void @llvm.dbg.declare(metadata %class.Foo* %2, metadata !30, metadata !DIExpression()), !dbg !31
+  call void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %2), !dbg !31
+  ret i32 0, !dbg !32
+}
+',definition,main,,
+5,FIObjNode,pointer,'; Function Attrs: mustprogress noinline norecurse optnone uwtable
+define dso_local noundef i32 @main() #0 !dbg !26 {
+  %1 = alloca i32, align 4
+  %2 = alloca %class.Foo, align 4
+  store i32 0, i32* %1, align 4
+  call void @llvm.dbg.declare(metadata %class.Foo* %2, metadata !30, metadata !DIExpression()), !dbg !31
+  call void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %2), !dbg !31
+  ret i32 0, !dbg !32
+}
+',definition,main,,
+6,RetNode,non-pointer,'; Function Attrs: mustprogress noinline norecurse optnone uwtable
+define dso_local noundef i32 @main() #0 !dbg !26 {
+  %1 = alloca i32, align 4
+  %2 = alloca %class.Foo, align 4
+  store i32 0, i32* %1, align 4
+  call void @llvm.dbg.declare(metadata %class.Foo* %2, metadata !30, metadata !DIExpression()), !dbg !31
+  call void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %2), !dbg !31
+  ret i32 0, !dbg !32
+}
+',definition,main,5,
+7,ValNode,pointer,'  %1 = alloca i32, align 4',,main,0,
+8,FIObjNode,pointer,'  %1 = alloca i32, align 4',,main,0,
+9,ValNode,non-pointer,'i32 1',,,,
+10,ValNode,pointer,'  %2 = alloca %class.Foo, align 4',,main,1,
+11,FIObjNode,pointer,'  %2 = alloca %class.Foo, align 4',,main,1,
+12,ValNode,non-pointer,'  store i32 0, i32* %1, align 4',,main,2,
+13,ValNode,non-pointer,'i32 0',,,,
+14,ValNode,non-pointer,'  call void @llvm.dbg.declare(metadata %class.Foo* %2, metadata !30, metadata !DIExpression()), !dbg !31',,main,3,
+15,ValNode,non-pointer,'  call void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %2), !dbg !31',,main,4,
+16,ValNode,pointer,'; Function Attrs: noinline nounwind optnone uwtable
+define linkonce_odr dso_local void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %0) unnamed_addr #2 comdat align 2 !dbg !33 {
+  %2 = alloca %class.Foo*, align 8
+  store %class.Foo* %0, %class.Foo** %2, align 8
+  call void @llvm.dbg.declare(metadata %class.Foo** %2, metadata !34, metadata !DIExpression()), !dbg !36
+  %3 = load %class.Foo*, %class.Foo** %2, align 8
+  %4 = getelementptr inbounds %class.Foo, %class.Foo* %3, i32 0, i32 0, !dbg !37
+  store i32 0, i32* %4, align 4, !dbg !39
+  ret void, !dbg !40
+}
+',definition,_ZN3FooC2Ev,,
+17,FIObjNode,pointer,'; Function Attrs: noinline nounwind optnone uwtable
+define linkonce_odr dso_local void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %0) unnamed_addr #2 comdat align 2 !dbg !33 {
+  %2 = alloca %class.Foo*, align 8
+  store %class.Foo* %0, %class.Foo** %2, align 8
+  call void @llvm.dbg.declare(metadata %class.Foo** %2, metadata !34, metadata !DIExpression()), !dbg !36
+  %3 = load %class.Foo*, %class.Foo** %2, align 8
+  %4 = getelementptr inbounds %class.Foo, %class.Foo* %3, i32 0, i32 0, !dbg !37
+  store i32 0, i32* %4, align 4, !dbg !39
+  ret void, !dbg !40
+}
+',definition,_ZN3FooC2Ev,,
+18,ValNode,non-pointer,'  ret i32 0, !dbg !32',,main,5,
+19,ValNode,pointer,'; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+',declaration,llvm.dbg.declare,,
+20,FIObjNode,pointer,'; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+',declaration,llvm.dbg.declare,,
+21,RetNode,non-pointer,'; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+',declaration,llvm.dbg.declare,,
+22,ValNode,non-pointer,'metadata %0',,llvm.dbg.declare,,0
+23,ValNode,non-pointer,'metadata %1',,llvm.dbg.declare,,1
+24,ValNode,non-pointer,'metadata %2',,llvm.dbg.declare,,2
+25,RetNode,non-pointer,'; Function Attrs: noinline nounwind optnone uwtable
+define linkonce_odr dso_local void @_ZN3FooC2Ev(%class.Foo* noundef nonnull align 4 dereferenceable(4) %0) unnamed_addr #2 comdat align 2 !dbg !33 {
+  %2 = alloca %class.Foo*, align 8
+  store %class.Foo* %0, %class.Foo** %2, align 8
+  call void @llvm.dbg.declare(metadata %class.Foo** %2, metadata !34, metadata !DIExpression()), !dbg !36
+  %3 = load %class.Foo*, %class.Foo** %2, align 8
+  %4 = getelementptr inbounds %class.Foo, %class.Foo* %3, i32 0, i32 0, !dbg !37
+  store i32 0, i32* %4, align 4, !dbg !39
+  ret void, !dbg !40
+}
+',definition,_ZN3FooC2Ev,6,
+26,ValNode,pointer,'%class.Foo* %0',,_ZN3FooC2Ev,,0
+27,ValNode,pointer,'  %2 = alloca %class.Foo*, align 8',,_ZN3FooC2Ev,0,
+28,FIObjNode,pointer,'  %2 = alloca %class.Foo*, align 8',,_ZN3FooC2Ev,0,
+29,ValNode,non-pointer,'  store %class.Foo* %0, %class.Foo** %2, align 8',,_ZN3FooC2Ev,1,
+30,ValNode,non-pointer,'  call void @llvm.dbg.declare(metadata %class.Foo** %2, metadata !34, metadata !DIExpression()), !dbg !36',,_ZN3FooC2Ev,2,
+31,ValNode,pointer,'  %3 = load %class.Foo*, %class.Foo** %2, align 8',,_ZN3FooC2Ev,3,
+32,ValNode,pointer,'  %4 = getelementptr inbounds %class.Foo, %class.Foo* %3, i32 0, i32 0, !dbg !31',,_ZN3FooC2Ev,4,
+33,ValNode,non-pointer,'  store i32 0, i32* %4, align 4, !dbg !33',,_ZN3FooC2Ev,5,
+34,ValNode,non-pointer,'  ret void, !dbg !34',,_ZN3FooC2Ev,6,
+35,GepObjNode,pointer,'  %2 = alloca %class.Foo, align 4',,main,1,

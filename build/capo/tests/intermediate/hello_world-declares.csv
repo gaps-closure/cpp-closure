@@ -1,0 +1,6 @@
+_ZStL8__ioinit,,,"/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../include/c++/9/iostream",2584,,_ZStL8__ioinit
+__dso_handle,,,"/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../include/c++/9/iostream",2584,,__dso_handle
+_ZSt4cout,,,"/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../include/c++/9/iostream",2584,,_ZSt4cout
+.str,,,"/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../include/c++/9/iostream",2584,,.str
+llvm.global_ctors,,,"/usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../../include/c++/9/iostream",2584,,llvm.global_ctors
+main,1,,"/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/hello_world.cpp",129,x

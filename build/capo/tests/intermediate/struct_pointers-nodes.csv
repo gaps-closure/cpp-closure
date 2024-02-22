@@ -1,0 +1,12 @@
+1,Decl.Var,"x",,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,47,58
+2,Decl.Var,"y",,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,81,94
+3,Decl.Function,"main",,,,,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,30,99
+4,Decl.Record,"foo",,,,,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,0,26
+5,Decl.Field,"foo::bar",,4,4,,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,17,21
+6,Stmt.Decl,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,47,59
+7,Stmt.Decl,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,81,97
+8,Stmt.Compound,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,41,99
+9,Stmt.Ref,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,65,65
+10,Stmt.Field,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,65,67
+11,Stmt.Other,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,65,73
+12,Stmt.Other,,,3,,3,,/home/bflin/gaps/cpp-closure/build/capo/tests/cpp/struct_pointers.cpp,73,73

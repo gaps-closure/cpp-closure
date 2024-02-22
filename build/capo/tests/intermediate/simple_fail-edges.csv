@@ -1,0 +1,11 @@
+1,Struct.Child,8,5
+2,Struct.Child,8,6
+3,Struct.Child,8,7
+4,Struct.Child,9,10
+5,Struct.Child,8,9
+6,Control.Entry,4,8
+7,Data.Decl,5,1
+8,Data.Decl,6,2
+9,Data.Decl,7,3
+9,Data.PointsTo,2,1
+10,Data.PointsTo,3,1
