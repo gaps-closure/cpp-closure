@@ -50,9 +50,7 @@ inside cpp-closure/build/capo/solver, run:
 
 rm -rf tmp && mkdir tmp && \
 python3 main.py mzn fake-test/nodes.csv fake-test/edges.csv \
-        --max_fn_params=10 \
+        --max-fn-params=10 \
         --cle-json=fake-test/collated.json \
-        --function-args=fake-test/fargs.txt \
-        --one-way=fake-test/oneway.txt \
-        --temp_dir tmp
+        --temp-dir tmp
 '''

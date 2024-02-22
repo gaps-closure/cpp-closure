@@ -145,7 +145,7 @@ class CLE:
         validate_cle(cle, max_fn_params, fnArgsToDict(fn_args), oneWayToSet(one_way))      
 
         # populate level / enclave data
-        nn_levels = list({e['cle-json']['level'] for e in cle})
+        nn_levels = list({e['cle-json']['level'] for e in cle}) + ['all']
         self.levels    = ['nullLevel'] + nn_levels
         self.enclaves  = ['nullEnclave'] + [l + '_E' for l in nn_levels]
 
@@ -174,6 +174,7 @@ class CLE:
             }]
         }, idx=0)
         for t in tags: addSyntheticLabel(t, {'level': 'nullLevel'})
+        addSyntheticLabel('ALL', {'level': 'all'})
 
         # populate label data
         self.cle = cle

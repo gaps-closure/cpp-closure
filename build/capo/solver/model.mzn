@@ -34,7 +34,7 @@ set of int: Struct_Method;                 % Connects a record to its method    
 set of int: Struct_Constructor;            % Connects a record to its constructor                     | Decl.Record -> Decl.Constructor
 set of int: Struct_Destructor;             % Connects a record to its destructor                      | Decl.Record -> Decl.Destructor 
 set of int: Struct_Inherit;                % Connects two records by inheritance relation             | Decl.Record -> Decl.Record
-set of int: Struct_Child;                    % When a statement has a child not described by the above  | Stmt -> Stmt
+set of int: Struct_Child;                  % When a statement has a child not described by the above  | Stmt -> Stmt
 
 set of int: Control_Return;                % A function/method/constructor/destructor return          | Stmt.Return -> Stmt.Call
 set of int: Control_Entry;                 % Connects a function-like object to it's body             | Decl -> Stmt
@@ -53,7 +53,7 @@ set of int: Data_FieldAccess;              % A field access                     
 set of int: Data_InstanceOf;               % Connects a 'this' instance to a class definition         | Stmt.This -> Decl.Record
 set of int: Data_Decl;                     % Connects a decl statment to a decl                       | Stmt.Decl -> Decl
 
-set of int: EdgeIdx;  % Spans all data and control edges
+set of int: EdgeIdx; % Spans all data and control edges
 
 set of int: DataEdge =
     Data_PointsTo union Data_DefUse union Data_ArgPass union
@@ -132,6 +132,7 @@ array[NodeIdx] of var cleLabel: taint;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 predicate isFunction(NodeIdx: n)    = (n in FunOrMethodOrCon);
+predicate isClass(NodeIdx: n)       = (n in Decl_Record);
 predicate allowOrRedact(var cdf: c) = (hasGuardOperation[c] == allow \/ hasGuardOperation[c] == redact);
 
 predicate sourceAnnotFun(EdgeIdx: e) =
@@ -143,7 +144,9 @@ predicate destAnnotFun(EdgeIdx: e) =
 predicate isInArctaint(var cleLabel: fan, var cleLabel: tnt, var Level: lvl) =
     (if isFunctionAnnotation[fan] then hasARCtaints[cdfForRemoteLevel[fan, lvl], tnt] else false endif);
 
-predicate xdedge(EdgeIdx: e) = nodeEnclave[hasSource[e]] != nodeEnclave[hasDest[e]];
+predicate xdedge(EdgeIdx: e) = (nodeEnclave[hasSource[e]] != nodeEnclave[hasDest[e]]) /\ nodeEnclave[hasSource[e]] != all_E /\ nodeEnclave[hasDest[e]] != all_E;
+
+predicate taintsAgree(var cleLabel: t1, var cleLabel: t2) = t1 == t2 \/ t1 == ALL \/ t2 == ALL;
 
 function var cleLabel: esTaint(EdgeIdx: e) = taint[hasSource[e]];
 function var cleLabel: edTaint(EdgeIdx: e) = taint[hasDest[e]];
@@ -296,14 +299,14 @@ constraint :: "intraFunPointsToTaintsMatch"
 % For ANY data edge between two function-external nodes, the taints must match
 predicate globalGlobalEdge(DataEdge: e) = (isGlobal[hasSource[e]] /\ isGlobal[hasDest[e]]);
 constraint :: "externExternDataEdgeTaintsMatch"
-    forall (e in DataEdge) (globalGlobalEdge(e) -> (esTaint(e) == edTaint(e)));
+    forall (e in DataEdge) (globalGlobalEdge(e) -> taintsAgree(esTaint(e), edTaint(e)));
 
 % For ANY data edge between data within a function and a function-external node, the taints must match
 predicate srcFunExternEdge(DataEdge: e)  = (hasFunction[hasSource[e]] != 0 /\ hasFunction[hasDest[e]]   == 0);
 predicate destFunExternEdge(DataEdge: e) = (hasFunction[hasDest[e]]   != 0 /\ hasFunction[hasSource[e]] == 0);
 predicate funExternEdge(DataEdge: e)     = (srcFunExternEdge(e) \/ destFunExternEdge(e));
 constraint :: "externDataEdgeTaintsMatch"
-    forall (e in DataEdge) (funExternEdge(e) -> esTaint(e) == edTaint(e));
+    forall (e in DataEdge) (funExternEdge(e) -> taintsAgree(esTaint(e), edTaint(e)));
 
 % This leaves taint propagation for inter-function data edges.
 
@@ -313,7 +316,7 @@ constraint :: "externDataEdgeTaintsMatch"
 %    must be in the callee's rettaints
 constraint :: "retEdgeFromUnannotatedTaintsMatch"
     forall (e in Data_Return where not sourceAnnotFun(e))
-        (esTaint(e) == edTaint(e));
+        (taintsAgree(esTaint(e), edTaint(e)));
 constraint :: "returnNodeInRettaints"
     forall (e in Data_Return where sourceAnnotFun(e) /\ not xdedge(e))
         (hasRettaints[esFunCdf(e), edTaint(e)]);
@@ -326,7 +329,7 @@ constraint :: "returnNodeInRettaints"
 constraint :: "argumentToUnannotatedTaintsMatch"
     forall (e in Control_Invocation where not destAnnotFun(e))
         (forall (arg_e in Data_ArgPass where hasSource[arg_e] == hasSource[e])
-            (edTaint(arg_e) == edTaint(e)));
+            (taintsAgree(edTaint(arg_e), edTaint(e))));
 constraint :: "argumentInArgtaints"
     forall (e in Control_Invocation where destAnnotFun(e) /\ not xdedge(e))
         (forall (arg_e in Data_ArgPass where hasSource[arg_e] == hasSource[e])
@@ -338,9 +341,25 @@ predicate interFunEdge(DataEdge: e) =
      hasFunction[hasSource[e]] != hasFunction[hasDest[e]]);
 constraint :: "interFunPointsToTaintsMatch"
     forall (e in Data_PointsTo)
-        ((not xdedge(e) /\ interFunEdge(e)) -> esTaint(e) == edTaint(e));
+        ((not xdedge(e) /\ interFunEdge(e)) -> taintsAgree(esTaint(e), edTaint(e)));
 
-% TODO: Properly constrain Data_FieldAccess edges. FieldAccess is special because it's a transfer of data from in
-% to outside of a class which is not mediated by a function. Interacts with the ALL label.
-% TODO: ALL label. Use a function.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Enabling shared classes %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% A class is pinned if:
+% - the class is annotated
+% - anything in the class is annotated
+% - it depends on anything external to the class
+% Note: relies on all edges following a "source depends on destination" convention
+% (as opposed to "destination depends on source"). Can be reversed, or specialized per edge type.
+% TODO: this will pin an inherited class, when we may want both to be unpinned. Exclude the Struct_Inherit edge?
+% TODO: this may be an expensive predicate. It can be pre-computed and placed into an array. Not sure what the backend does with this.
+predicate isPinned(Decl_Record: r) = (userAnnotatedNode[r] \/
+    (exists (n in NodeIdx) (hasClass[n] == r /\ userAnnotatedNode[n])) \/ 
+    (exists (e in EdgeIdx) (hasClass[hasSource[e]] == r /\ hasClass[hasDest[e]] != r)));
+
+% A node has the ALL label if and only if it is contained in an unpinned class
+constraint :: "definitionForALL"
+    forall (n in NodeIdx)
+        (((hasClass[n] != 0 /\ not isPinned(hasClass[n])) \/ (isClass(n) /\ not isPinned(n))) == (taint[n] == ALL));
