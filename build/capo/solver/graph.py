@@ -5,7 +5,7 @@ class ProgramGraph:
         self.nodes_csv = nodes_csv
         self.edges_csv = edges_csv
 
-        # Node and edge types, ordered
+        # Node and edge types, in the order they appear in the CSV files
         node_types = [
             "Decl.Var", "Decl.Function", "Decl.Record", "Decl.Field", "Decl.Method", 
             "Decl.Param", "Decl.Constructor", "Decl.Destructor", "Stmt.Decl", "Stmt.Call", 

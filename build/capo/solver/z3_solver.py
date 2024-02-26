@@ -8,17 +8,22 @@ class ConflictAnalyzer:
 
     def __init__(self, pdg, cle, solver_type, minimize):
 
-        self.s = Solver()
-        self.pdg = pdg
+        # Options
         self.use_bv = (solver_type == 'bv')
+        self.minimize = minimize
+
+        # Solver state
+        self.s = Solver()
+        self.encoded = False
+        self.status = 'UNSOLVED'
         self.constraints = []
         self.assumptions = []
         self.explanations = {}
-        self.status = 'UNSOLVED'
-        self.minimize = minimize
-        self.encoded = False
 
-        # Conversion from CLE into z3 representation
+        # Program graph
+        self.pdg = pdg
+
+        # Conversion from CLE into z3 API representation
         self.Label, self.LabelCons = EnumSort('Label', cle.cle_labels)
         self.Level, self.LevelCons = EnumSort('Level', cle.levels)
         self.Enclave, self.EnclaveCons = EnumSort('Enclave', cle.enclaves)
@@ -52,17 +57,20 @@ class ConflictAnalyzer:
         self.hasARCtaints = [[s == 'true' for s in ls] for ls in cle.has_arctaints]
         self.hasArgtaints = [[[s == 'true' for s in ls] for ls in lss] for lss in cle.has_argtaints]
 
+        # Always encode immediately
         self.encode()
 
+    # add a set of constraints while excluding them from unsat cores (currently unused)
     def assume(self, assumptions):
         self.s.add(assumptions)
         self.assumptions.extend(assumptions)
 
+    # add a set of constraints
     def add(self, constraints):
         self.constraints.extend(constraints)
 
+    # Solve and return sat or unsat
     def solve(self):
-
         t = time()
         print("solving (using theory: {})...".format("bv" if self.use_bv else "int"))
         if self.status != unsat:
@@ -72,15 +80,15 @@ class ConflictAnalyzer:
         print("\nsolving time (s): {}".format(int(time() - t)))
         return self.status
 
+    # Print out the model for a sat instance
     def evidence(self, handle):
-
         if self.status != sat:
             return "No evidence for '{}' status".format(str(self.status))
         print("Dumping model...")
         handle.write(str(self.s.model()))
 
+    # Explain unsatisfiability of an instance
     def explain(self, temp_dir, handle):
-
         t = time()
         if self.status != unsat:
             return "Cannot explain '{}' status".format(str(self.status))
@@ -136,7 +144,7 @@ class ConflictAnalyzer:
         pdg.Control_Invocation = eUnion(['Control_FunctionInvocation', 'Control_MethodInvocation', 'Control_ConstructorInvocation', 'Control_DestructorInvocation'])
         pdg.Data_EnclaveSafe = eUnion(['Data_FieldAccess', 'Data_InstanceOf', 'Data_Object', 'Data_DefUse', 'Data_Decl', 'Data_ArgPass'])
 
-        # Helpers / Properties
+        # Helpers / Properties (operate on python integers, NOT z3 IDs!)
         hasClass          = lambda n: pdg.hasClass[n - 1] # 0 for node not in a class, otherwise maps to the Decl_Record containing the node
         isGlobal          = lambda n: pdg.isGlobal[n - 1]
         hasFunction       = lambda n: pdg.hasFunction[n - 1]
@@ -157,7 +165,7 @@ class ConflictAnalyzer:
         destFunExternEdge = lambda e: dstFun(e) != 0 and srcFun(e) == 0
         funExternEdge     = lambda e: srcFunExternEdge(e) or destFunExternEdge(e)
 
-        # Arrays as uninterpreted functions
+        # Convert CLE arrays to uninterpreted functions and populate their values
         hasLabelLevel = Function('hasLabelLevel', self.Label, self.Level)
         for lbl in range(len(self.hasLabelLevel)):
             self.add([(hasLabelLevel(self.LabelCons[lbl]) == self.hasLabelLevel[lbl], ('cle', 'hasLabelLevel', (str(self.LabelCons[lbl]), str(self.hasLabelLevel[lbl]))))])
@@ -213,7 +221,7 @@ class ConflictAnalyzer:
                     v = True
             self.add([(isPinned(mkId(r)) == v, ('cle', 'isPinned', (str(r), "is not eligible" if v else "is eligible")))])
 
-        # Shorthands over UIFs
+        # Shorthands over UIFs (these return z3 objects)
         allowOrRedact = lambda c: Or(hasGuardOperation(c) == self.allow, hasGuardOperation(c) == self.redact)
         isInArctaint  = lambda fan, tnt, lvl: If(isFunctionAnnotation(fan), hasARCtaints(cdfForRemoteLevel(fan, lvl), tnt), False)
         xdedge        = lambda e: And(nodeEnclave(mkId(hasSource(e))) != nodeEnclave(mkId(hasDest(e))), nodeEnclave(mkId(hasSource(e))) != self.allEnclave, nodeEnclave(mkId(hasDest(e))) != self.allEnclave)
@@ -226,48 +234,304 @@ class ConflictAnalyzer:
         edFunCdf      = lambda e: cdfForRemoteLevel(edFunTaint(e), hasLabelLevel(esTaint(e))) if destAnnotFun(e)   else self.nullCdf
         ftaint        = lambda n: taint(mkId(hasFunction(n))) if hasFunction(n) != 0 else self.nullCleLabel
 
-        # Constraints
+        # Constraints (names match model.mzn)
 
-        ## NODE
+        ## NODE CONSTRAINTS
 
-        self.add([(nodeEnclave(mkId(n)) != self.nullEnclave, ('node', 'NodeHasEnclave', n)) for n in pdg.n['NodeIdx']])
-        self.add([(nodeEnclave(mkId(n)) == nodeEnclave(mkId(hasFunction(n))), ('node', 'NodeEnclaveIsFunEnclave', n)) for n in pdg.n['NodeIdx'] if hasFunction(n) != 0])
-        self.add([(nodeEnclave(mkId(n)) == nodeEnclave(mkId(hasClass(n))), ('node', 'NodeEnclaveIsClassEnclave', n)) for n in pdg.n['NodeIdx'] if hasClass(n) != 0])
-        self.add([(hasLabelLevel(taint(mkId(n))) == hasEnclaveLevel(nodeEnclave(mkId(n))), ('node', 'NodeLevelAtEnclaveLevel', n)) for n in pdg.n['NodeIdx']])
-        self.add([(Implies(isFunctionAnnotation(taint(mkId(n))), isFun(n)), ('node', 'FnAnnotationForFnOnly', n)) for n in pdg.n['NodeIdx']])
-        self.add([(Implies(isFunctionAnnotation(taint(mkId(n))), userAnnotatedNode(n)), ('node', 'FnAnnotationByUserOnly', n)) for n in pdg.FunctionLike])
-        self.add([(Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n)))), ('node', 'annotationOnFunctionIsFunAnnotation', n)) for n in pdg.FunctionLike])
-        self.add([(Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n))) == False), ('node', 'annotationOnClassIsNodeAnnotation', n)) for n in pdg.n['Decl_Record']])
-        self.add([(Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n))) == False), ('node', 'annotationOnFieldIsNodeAnnotation', n)) for n in pdg.n['Decl_Field']])
-        self.add([(Implies(userAnnotatedNode(hasFunction(n)) == False, taint(mkId(n)) == ftaint(n)), ('node', 'UnannotatedFunContentTaintMatch', n)) for n in pdg.n['NodeIdx'] if hasFunction(n) != 0])
-        self.add([(Implies(userAnnotatedNode(hasClass(n)) == False, taint(mkId(n)) == taint(mkId(hasClass(n)))), ('node', 'UnannotatedClassTaintsMatch', n)) for n in pdg.n['NodeIdx'] if hasClass(n) != 0])
-        self.add([(Implies(userAnnotatedNode(hasClass(n)) == False, userAnnotatedNode(n) == False), ('node', 'noAnnotatedDataForUnannotatedClass', n)) for n in pdg.n['NodeIdx'] if hasClass(n) != 0])
-        self.add([(taint(mkId(n)) == taint(mkId(hasClass(n))), ('node', 'unannotatedConstructorGetsClassTaint', n)) for n in pdg.n['Decl_Constructor'] if not userAnnotatedNode(n)])
-        self.add([(taint(mkId(n)) == taint(mkId(hasClass(n))), ('node', 'unannotatedDestructorGetsClassTaint', n)) for n in pdg.n['Decl_Destructor'] if not userAnnotatedNode(n)])
-        self.add([(taint(mkId(n)) == taint(mkId(hasClass(n))), ('node', 'unannotatedMethodGetsClassTaint', n)) for n in pdg.n['Decl_Method'] if not userAnnotatedNode(n)])
-        self.add([(Implies(userAnnotatedNode(hasFunction(n)), isInArctaint(ftaint(n), taint(mkId(n)), hasLabelLevel(taint(mkId(n))))), ('node', 'AnnotatedFunContentCoercible', n)) for n in pdg.n['NodeIdx'] if hasFunction(n) != 0 and not isFun(n)])
-        # self.add([(_, ('node', 'annotatedConstructorReturnsClassTaint', n)) for n in pdg.n['Decl_Constructor']])
-        self.add([(Or(And(hasClass(n) != 0, isPinned(hasClass(n)) == False), And(isClass(n), isPinned(n) == False)) == (taint(mkId(n)) == self.allLabel), ('node', 'definitionForALL', n)) for n in pdg.n['NodeIdx']])
+        self.add([
+            (
+                nodeEnclave(mkId(n)) != self.nullEnclave,
+                ('node', 'NodeHasEnclave', n)
+            )
+            for n in pdg.n['NodeIdx']
+        ])
+
+        self.add([
+            (
+                nodeEnclave(mkId(n)) == nodeEnclave(mkId(hasFunction(n))), 
+                ('node', 'NodeEnclaveIsFunEnclave', n)
+            )
+            for n in pdg.n['NodeIdx'] if hasFunction(n) != 0
+        ])
+
+        self.add([
+            (
+                nodeEnclave(mkId(n)) == nodeEnclave(mkId(hasClass(n))),
+                ('node', 'NodeEnclaveIsClassEnclave', n)
+            )
+            for n in pdg.n['NodeIdx'] if hasClass(n) != 0
+        ])
+
+        self.add([
+            (
+                hasLabelLevel(taint(mkId(n))) == hasEnclaveLevel(nodeEnclave(mkId(n))),
+                ('node', 'NodeLevelAtEnclaveLevel', n)
+            )
+            for n in pdg.n['NodeIdx']
+        ])
+
+        self.add([
+            (
+                Implies(isFunctionAnnotation(taint(mkId(n))), isFun(n)), 
+                ('node', 'FnAnnotationForFnOnly', n)
+            )
+            for n in pdg.n['NodeIdx']
+        ])
         
-        ## EDGE
+        self.add([
+            (
+                Implies(isFunctionAnnotation(taint(mkId(n))), userAnnotatedNode(n)), 
+                ('node', 'FnAnnotationByUserOnly', n)
+            ) 
+            for n in pdg.FunctionLike
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n)))), 
+                ('node', 'annotationOnFunctionIsFunAnnotation', n)
+            ) 
+            for n in pdg.FunctionLike
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n))) == False), 
+                ('node', 'annotationOnClassIsNodeAnnotation', n)
+            ) 
+            for n in pdg.n['Decl_Record']
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(n), isFunctionAnnotation(taint(mkId(n))) == False), 
+                ('node', 'annotationOnFieldIsNodeAnnotation', n)
+            ) 
+            for n in pdg.n['Decl_Field']
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(hasFunction(n)) == False, taint(mkId(n)) == ftaint(n)), 
+                ('node', 'UnannotatedFunContentTaintMatch', n)
+            ) 
+            for n in pdg.n['NodeIdx'] if hasFunction(n) != 0
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(hasClass(n)) == False, taint(mkId(n)) == taint(mkId(hasClass(n)))), 
+                ('node', 'UnannotatedClassTaintsMatch', n)
+            ) 
+            for n in pdg.n['NodeIdx'] if hasClass(n) != 0
+        ])
+        
+        self.add([
+            (
+                Implies(userAnnotatedNode(hasClass(n)) == False, userAnnotatedNode(n) == False), 
+                ('node', 'noAnnotatedDataForUnannotatedClass', n)
+            ) 
+            for n in pdg.n['NodeIdx'] if hasClass(n) != 0
+        ])
+        
+        self.add([
+            (
+                taint(mkId(n)) == taint(mkId(hasClass(n))), 
+                ('node', 'unannotatedConstructorGetsClassTaint', n)
+            ) 
+            for n in pdg.n['Decl_Constructor'] if not userAnnotatedNode(n)
+        ])
+        
+        self.add([
+            (
+                taint(mkId(n)) == taint(mkId(hasClass(n))), 
+                ('node', 'unannotatedDestructorGetsClassTaint', n)
+            ) 
+            for n in pdg.n['Decl_Destructor'] if not userAnnotatedNode(n)
+        ])
+        
+        self.add([
+            (
+                taint(mkId(n)) == taint(mkId(hasClass(n))), 
+                ('node', 'unannotatedMethodGetsClassTaint', n)
+            ) 
+            for n in pdg.n['Decl_Method'] if not userAnnotatedNode(n)
+        ])
+        
+        self.add([
+            (
+                Implies(
+                    userAnnotatedNode(hasFunction(n)), 
+                    isInArctaint(ftaint(n), taint(mkId(n)), hasLabelLevel(taint(mkId(n))))
+                ),
+                ('node', 'AnnotatedFunContentCoercible', n)
+            ) 
+            for n in pdg.n['NodeIdx'] if hasFunction(n) != 0 and not isFun(n)
+        ])
+        
+        self.add([
+            (
+                True, # TODO
+                ('node', 'annotatedConstructorReturnsClassTaint', n)
+            ) 
+            for n in pdg.n['Decl_Constructor']
+        ])
+        
+        self.add([
+            (
+                Or(
+                    And(hasClass(n) != 0, isPinned(hasClass(n)) == False), 
+                    And(isClass(n), isPinned(n) == False)
+                ) == (taint(mkId(n)) == self.allLabel),
+                ('node', 'definitionForALL', n)
+            ) 
+            for n in pdg.n['NodeIdx']
+        ])
+        
+        ## EDGE CONSTRAINTS
 
-        self.add([(esTaint(e) == edTaint(e), ('edge', 'inheritTaint', e)) for e in pdg.e['Struct_Inherit']])
-        self.add([(userAnnotatedNode(hasDest(e)) == False, ('edge', 'FunctionPtrSinglyTainted', e)) for e in pdg.e['Data_PointsTo'] if isFun(hasDest(e))])
-        self.add([(xdedge(e) == False, ('edge', 'NonCallRetControlEnclaveSafe', e)) for e in pdg.Control_EnclaveSafe])
-        self.add([(Implies(xdedge(e), userAnnotatedNode(hasDest(e))), ('edge', 'XDCallBlest', e)) for e in pdg.Control_Invocation])
-        self.add([(Implies(xdedge(e), allowOrRedact(edFunCdf(e))), ('edge', 'XDCallAllowed', e)) for e in pdg.Control_Invocation])
-        self.add([(Implies(xdedge(e), allowOrRedact(esFunCdf(e))), ('edge', 'XDReturnAllowed', e)) for e in pdg.e['Control_Return']])
-        self.add([(xdedge(e) == False, ('edge', 'EnclaveSafeDataEdges', e)) for e in pdg.Data_EnclaveSafe])
-        self.add([(Implies(xdedge(e), allowOrRedact(esFunCdf(e))), ('edge', 'XDReturnDataAllowed', e)) for e in pdg.e['Data_Return']])
-        self.add([(Implies(xdedge(e), And(allowOrRedact(cdfForRemoteLevel(edTaint(e), hasLabelLevel(esTaint(e)))), isFun(hasDest(e)) == False)), ('edge', 'XDPointsToAllowed', e)) for e in pdg.e['Data_PointsTo']])
-        self.add([(esTaint(e) == edTaint(e), ('edge', 'intraFunPointsToTaintsMatch', e)) for e in pdg.e['Data_PointsTo'] if intraFunEdge(e)])
-        self.add([(taintsAgree(esTaint(e), edTaint(e)), ('edge', 'externExternDataEdgeTaintsMatch', e)) for e in pdg.DataEdge if globalGlobalEdge(e)])
-        self.add([(taintsAgree(esTaint(e), edTaint(e)), ('edge', 'externDataEdgeTaintsMatch', e)) for e in pdg.DataEdge if funExternEdge(e)])
-        self.add([(taintsAgree(esTaint(e), edTaint(e)), ('edge', 'retEdgeFromUnannotatedTaintsMatch', e)) for e in pdg.e['Data_Return'] if not sourceAnnotFun(e)])
-        self.add([(Implies(xdedge(e) == False, hasRettaints(esFunCdf(e), edTaint(e))), ('edge', 'returnNodeInRettaints', e)) for e in pdg.e['Data_Return'] if sourceAnnotFun(e)])
-        # self.add([(_, ('edge', 'argumentToUnannotatedTaintsMatch', e)) for e in pdg.Control_Invocation if not destAnnotFun(e)])
-        # self.add([(_, ('edge', 'argumentInArgtaints', e)) for e in pdg.Control_Invocation if destAnnotFun(e)])
-        self.add([(Implies(xdedge(e) == False, taintsAgree(esTaint(e), edTaint(e))), ('edge', 'interFunPointsToTaintsMatch', e)) for e in pdg.e['Data_PointsTo'] if interFunEdge(e)])
+        self.add([
+            (
+                esTaint(e) == edTaint(e), 
+                ('edge', 'inheritTaint', e)
+            ) 
+            for e in pdg.e['Struct_Inherit']
+        ])
+        
+        self.add([
+            (
+                userAnnotatedNode(hasDest(e)) == False, 
+                ('edge', 'FunctionPtrSinglyTainted', e)
+            ) 
+            for e in pdg.e['Data_PointsTo'] if isFun(hasDest(e))
+        ])
+        
+        self.add([
+            (
+                xdedge(e) == False, 
+                ('edge', 'NonCallRetControlEnclaveSafe', e)
+            ) 
+            for e in pdg.Control_EnclaveSafe
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e), userAnnotatedNode(hasDest(e))), 
+                ('edge', 'XDCallBlest', e)
+            ) 
+            for e in pdg.Control_Invocation
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e), allowOrRedact(edFunCdf(e))), 
+                ('edge', 'XDCallAllowed', e)
+            ) 
+            for e in pdg.Control_Invocation
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e), allowOrRedact(esFunCdf(e))), 
+                ('edge', 'XDReturnAllowed', e)
+            ) 
+            for e in pdg.e['Control_Return']
+        ])
+        
+        self.add([
+            (
+                xdedge(e) == False, 
+                ('edge', 'EnclaveSafeDataEdges', e)
+            ) 
+            for e in pdg.Data_EnclaveSafe
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e), allowOrRedact(esFunCdf(e))), 
+                ('edge', 'XDReturnDataAllowed', e)
+            ) 
+            for e in pdg.e['Data_Return']
+        ])
+        
+        self.add([
+            (
+                Implies(
+                    xdedge(e),
+                    And(
+                        allowOrRedact(cdfForRemoteLevel(edTaint(e), hasLabelLevel(esTaint(e)))), 
+                        isFun(hasDest(e)) == False
+                    )
+                ), 
+                ('edge', 'XDPointsToAllowed', e)
+            ) 
+            for e in pdg.e['Data_PointsTo']
+        ])
+        
+        self.add([
+            (
+                esTaint(e) == edTaint(e), 
+                ('edge', 'intraFunPointsToTaintsMatch', e)
+            ) 
+            for e in pdg.e['Data_PointsTo'] if intraFunEdge(e)
+        ])
+        
+        self.add([
+            (
+                taintsAgree(esTaint(e), edTaint(e)),
+                ('edge', 'externExternDataEdgeTaintsMatch', e)
+            ) 
+            for e in pdg.DataEdge if globalGlobalEdge(e)
+        ])
+        
+        self.add([
+            (
+                taintsAgree(esTaint(e), edTaint(e)), 
+                ('edge', 'externDataEdgeTaintsMatch', e)
+            ) 
+            for e in pdg.DataEdge if funExternEdge(e)
+        ])
+        
+        self.add([
+            (
+                taintsAgree(esTaint(e), edTaint(e)), 
+                ('edge', 'retEdgeFromUnannotatedTaintsMatch', e)
+            ) 
+            for e in pdg.e['Data_Return'] if not sourceAnnotFun(e)
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e) == False, hasRettaints(esFunCdf(e), edTaint(e))), 
+                ('edge', 'returnNodeInRettaints', e)
+            ) 
+            for e in pdg.e['Data_Return'] if sourceAnnotFun(e)
+        ])
+        
+        self.add([
+            (
+                True, # TODO
+                ('edge', 'argumentToUnannotatedTaintsMatch', e)
+            ) 
+            for e in pdg.Control_Invocation if not destAnnotFun(e)
+        ])
+        
+        self.add([
+            (
+                True, # TODO
+                ('edge', 'argumentInArgtaints', e)
+            ) 
+            for e in pdg.Control_Invocation if destAnnotFun(e)
+        ])
+        
+        self.add([
+            (
+                Implies(xdedge(e) == False, taintsAgree(esTaint(e), edTaint(e))), 
+                ('edge', 'interFunPointsToTaintsMatch', e)
+            ) 
+            for e in pdg.e['Data_PointsTo'] if interFunEdge(e)
+        ])
+        
         elapsed()
 
 def run_z3(pgraph, cle, solver, minimize_core, log_constraints, temp_dir):
@@ -276,7 +540,7 @@ def run_z3(pgraph, cle, solver, minimize_core, log_constraints, temp_dir):
     print("encoding...")
     ca = ConflictAnalyzer(pgraph, cle, solver, minimize_core)
 
-    # Write constraints
+    # Write constraints (can take a long time)
     if log_constraints:
         print("building sexpr...")
         exp = ca.s.sexpr()

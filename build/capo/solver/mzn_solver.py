@@ -1,6 +1,7 @@
 import subprocess
 import os
 
+# Convert CLE to a .mzn string
 def cle_to_mzn(cle):
 
     # string conversion helpers
@@ -42,6 +43,7 @@ def cle_to_mzn(cle):
 
     return enc_s + "\n\n" + cle_s
 
+# Convert program graph to a .mzn string
 def pgraph_to_mzn(pgraph):
 
     instance = []
@@ -52,6 +54,7 @@ def pgraph_to_mzn(pgraph):
         instance.append(",".join([str(e).lower() for e in entries]))
         instance.append("];")
 
+    # duplicate code (bad!)
     for n in pgraph.n:
         dmn = pgraph.n[n]
         if len(dmn) == 0: instance.append("{} = 0 .. -1;".format(n))
@@ -91,7 +94,9 @@ def run_mzn(pgraph, cle, temp_dir):
         mzn_model = f.read()
     with open(temp_dir / 'instance.mzn', 'w') as f:
         f.write(mzn_model + "\n\n" + mzn_instance)
-    mzn_args = [ 'minizinc', '--no-optimize', '--solver', 'Gecode', temp_dir / 'instance.mzn' ] # TODO: Don't have gecode locally
+
+    # TODO: allow certain minizinc args to be parameterized?
+    mzn_args = [ 'minizinc', '--no-optimize', '--solver', 'Gecode', temp_dir / 'instance.mzn' ]
     output = subprocess.run(mzn_args, capture_output=True, encoding='utf-8')
     if output.returncode != 0 or "Error" in output.stdout:
         print("MINIZINC FAILURE:")

@@ -117,32 +117,9 @@ class CLE:
     def __init__(self, f_cle_json, max_fn_params):
 
         cle = json.loads(f_cle_json.read_text())
-        fn_args = "" 
-        one_way = "" 
-
-        # Convert functionArgs file contents into a dictionary mapping labels to number of args
-        def fnArgsToDict(fn_args):
-            args_d = {}
-            for l in fn_args.splitlines():
-                fs = l.split()
-                fn_anno, n_args = fs[0], fs[1]
-                if len(fs) == 3: fn_anno, n_args = fs[1], fs[2]
-                if fn_anno in args_d and args_d[fn_anno] != int(n_args):
-                    die("Functions with different numbers of arguments use the same CLE label")
-                args_d[fn_anno] = int(n_args)
-            return args_d
         
-        def oneWayToSet(one_way):
-            ow_d = {}
-            for l in one_way.splitlines():
-                fs = l.split()
-                fn_anno, ow = fs[0], fs[1]
-                if len(fs) == 3: fn_anno, ow = fs[1], fs[2]
-                bf = 1 if fn_anno not in ow_d else ow_d[fn_anno]
-                ow_d[fn_anno] = min(int(ow), bf)
-            return { anno for anno in ow_d if ow_d[anno] == 0 }
-        
-        validate_cle(cle, max_fn_params, fnArgsToDict(fn_args), oneWayToSet(one_way))      
+        # ensure collated.json is a valid CLE instance
+        validate_cle(cle, max_fn_params, {}, {})      
 
         # populate level / enclave data
         nn_levels = list({e['cle-json']['level'] for e in cle}) + ['all']
@@ -156,8 +133,9 @@ class CLE:
         taints    = set(flat([fnTnts(e) for e in cle if self.isFn(e)]))
         tags      = taints - {e['cle-label'] for e in cle}
 
-        # add synthetic null, TAG, and DFLT labels to JSON copy,
-        # and sort with function annotations in front (creates a continuous range for minizinc)
+        # add synthetic TAG, ALL labels,
+        # and sort with function annotations in front
+        # (creates a continuous range for minizinc)
         cle = list(cle)
         cle.sort(key=self.isFn, reverse=True)
         def addSyntheticLabel(n, data, idx=None):
@@ -183,7 +161,7 @@ class CLE:
         self.label_levels = [e['cle-json']['level'] for e in cle]
         self.is_fun_annotation = [str(self.isFn(e)).lower() for e in cle]
 
-        # # populate cdf data
+        # populate cdf data
         self.all_cdfs             = []
         self.from_cle_label       = []
         self.has_remote_level     = []

@@ -13,7 +13,7 @@ def parsed_args():
     parser.add_argument('model', help="constraint model to use (supports 'mzn' or 'z3')", choices=['mzn', 'z3'])
     parser.add_argument('graph_nodes', help="path to program graph nodes as a .csv file", type=Path)
     parser.add_argument('graph_edges', help="path to program graph edges as a .csv file", type=Path)
-    parser.add_argument('--max-fn-params', required=True, help="maximum number of function parameters", type=int)
+    parser.add_argument('--max-fn-params', required=True, help="maximum number of arguments to any function in the input program", type=int)
     parser.add_argument('--cle-json',      required=True, type=Path, help='collated CLE JSON')
     parser.add_argument('--temp-dir',      required=True, help="relative path to store outputs", type=Path)
     args = parser.parse_args()
@@ -49,8 +49,8 @@ if __name__ == "__main__":
 inside cpp-closure/build/capo/solver, run:
 
 rm -rf tmp && mkdir tmp && \
-python3 main.py mzn fake-test/nodes.csv fake-test/edges.csv \
+python3 main.py z3 ../tests/intermediate/class_basic-nodes.csv ../tests/intermediate/class_basic-edges.csv \
         --max-fn-params=10 \
-        --cle-json=fake-test/collated.json \
+        --cle-json=../tests/intermediate/class_basic-collated.json \
         --temp-dir tmp
 '''
