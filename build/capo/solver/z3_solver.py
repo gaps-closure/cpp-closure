@@ -369,19 +369,26 @@ class ConflictAnalyzer:
             for n in pdg.n['NodeIdx'] if hasFunction(n) != 0 and not isFun(n)
         ])
         
+        # TODO: doesn't validate that it is the only rettaint
         self.add([
             (
-                True, # TODO
+                And([
+                    Implies(
+                        cdfForRemoteLevel(taint(mkId(n)), self.level2enum[l]) != self.nullCdf,
+                        hasRettaints(cdfForRemoteLevel(taint(mkId(n)), self.level2enum[l]), taint(mkId(hasClass(n))))
+                    )
+                    for l in self.levels
+                ]),
                 ('node', 'annotatedConstructorReturnsClassTaint', n)
             ) 
-            for n in pdg.n['Decl_Constructor']
+            for n in pdg.n['Decl_Constructor'] if userAnnotatedNode(n)
         ])
         
         self.add([
             (
                 Or(
-                    And(hasClass(n) != 0, isPinned(hasClass(n)) == False), 
-                    And(isClass(n), isPinned(n) == False)
+                    And(hasClass(n) != 0, isPinned(mkId(hasClass(n))) == False), 
+                    And(isClass(n), isPinned(mkId(n)) == False)
                 ) == (taint(mkId(n)) == self.allLabel),
                 ('node', 'definitionForALL', n)
             ) 
@@ -510,7 +517,10 @@ class ConflictAnalyzer:
         
         self.add([
             (
-                True, # TODO
+                And([
+                    taintsAgree(edTaint(arg_e), edTaint(e))
+                    for arg_e in pdg.e['Data_ArgPass'] if hasSource(arg_e) == hasSource(e)
+                ]),
                 ('edge', 'argumentToUnannotatedTaintsMatch', e)
             ) 
             for e in pdg.Control_Invocation if not destAnnotFun(e)
@@ -518,7 +528,10 @@ class ConflictAnalyzer:
         
         self.add([
             (
-                True, # TODO
+                And([
+                    hasArgtaints(edFunCdf(e), mkId(hasParamIdx(hasDest(arg_e))), taint(mkId(hasDest(arg_e))))
+                    for arg_e in pdg.e['Data_ArgPass'] if hasSource(arg_e) == hasSource(e)
+                ]),
                 ('edge', 'argumentInArgtaints', e)
             ) 
             for e in pdg.Control_Invocation if destAnnotFun(e)
