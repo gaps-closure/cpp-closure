@@ -104,6 +104,12 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
     // }
     
     string sourcePath = topology.getSourcePath();
+
+    if (!filesystem::exists(sourcePath)) {
+        std::cout << "file does not exist: " << sourcePath << endl;
+        exit(1);
+    }
+
     for (string level : topology.getLevels()) {
         llvm::outs() << outputDir << "/" << level << "\n";
         topology.setLevelInProgress(level);
