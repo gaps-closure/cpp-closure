@@ -144,7 +144,13 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
         return true;    // keep it
 
     // showLoc("FunctionDecl......", sm, func);
-    replace(func->getSourceRange());
+
+    if (!func->hasBody())
+        return true;
+   
+    SourceRange sr(sm.getExpansionLoc(func->getSourceRange().getBegin()),
+                   sm.getExpansionLoc(func->getSourceRange().getEnd()));
+    replace(sr);
 
     return true;
 }
