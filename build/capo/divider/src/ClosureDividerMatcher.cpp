@@ -145,10 +145,25 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
 
     // showLoc("FunctionDecl......", sm, func);
 
-    if (!func->hasBody())
+    const FunctionDecl* def = NULL;
+    if (!func->hasBody(def))
         return true;
-   
+
     replace(sm, func->getSourceRange());
+
+    // From clang doxygen:
+    /// "The function body might be in any of the (re-)declarations of this
+    /// function. The variant that accepts a FunctionDecl pointer will set that
+    /// function declaration to the actual declaration containing the body (if
+    /// there is one)"
+    // For example:
+    // static void mg_sendnsreq();
+    // static void mg_sendnsreq() {}
+    // The following tries to erase the ; in the above example.
+    if (def != func) {
+        SourceLocation loc = findSemiAfterLocation(func->getEndLoc(), *ctx, true);
+        rewriter.ReplaceText (loc, 1, " ");
+    }
 
     return true;
 }
@@ -189,6 +204,9 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
 
     // showLoc("VarDecl......", sm, var);
     replace(sm, var->getSourceRange());
+
+    SourceLocation loc = findSemiAfterLocation(var->getEndLoc(), *ctx, true);
+    rewriter.ReplaceText (loc, 1, " ");
 
     return true;
 }
