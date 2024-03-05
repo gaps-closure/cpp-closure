@@ -50,8 +50,8 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
         const auto funcDecl = functionDecl(hasName(funcName)).bind("FunctionDecl");
         finder.addMatcher(funcDecl, &matcherHandler);
 
-        const auto funcCall = callExpr(callee(functionDecl(hasName(funcName)))).bind("FunctionCall");
-        finder.addMatcher(funcCall, &matcherHandler);
+        // const auto funcCall = callExpr(callee(functionDecl(hasName(funcName)))).bind("FunctionCall");
+        // finder.addMatcher(funcCall, &matcherHandler);
     }
     // const auto funcCall = callExpr(callee(functionDecl(hasName(annotation.getName()))),
     //                                    argumentCountIs(0)).bind("FunctionCall");
@@ -64,8 +64,8 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
         finder.addMatcher(vDecl, &matcherHandler);
 
         // const auto varRef = declRefExpr(varDecl(hasName(varName))).bind("varRef");
-        const auto varRef =  declRefExpr(to(varDecl(hasName(varName)))).bind("VarRef");
-        finder.addMatcher(varRef, &matcherHandler);
+        // const auto varRef =  declRefExpr(to(varDecl(hasName(varName)))).bind("VarRef");
+        // finder.addMatcher(varRef, &matcherHandler);
     }
 
     const auto fdDecl = fieldDecl().bind("FieldDecl");
@@ -102,20 +102,20 @@ void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result)
         matchFunctionDecl(sm, func);
     }
 
-    const CallExpr *call = result.Nodes.getNodeAs<clang::CallExpr>("FunctionCall");
-    if (call) { // && isInFile(sm, call)) {  // func->hasAttrs() && 
-        matchFunctionCall(sm, call);
-    }
+    // const CallExpr *call = result.Nodes.getNodeAs<clang::CallExpr>("FunctionCall");
+    // if (call) { // && isInFile(sm, call)) {  // func->hasAttrs() && 
+    //     matchFunctionCall(sm, call);
+    // }
 
     const VarDecl *var = result.Nodes.getNodeAs<clang::VarDecl>("VarDecl");
     if (var && isInFile(sm, var) && !var->isLocalVarDecl()) { // && var->hasAttrs() ) {
         matchVarDecl(sm, var); 
     }
 
-    const DeclRefExpr *varRef = result.Nodes.getNodeAs<clang::DeclRefExpr>("VarRef");
-    if (varRef) { // && isInFile(sm, varRef)) { // && var->hasAttrs() ) {
-        matchVarRef(sm, varRef); 
-    }
+    // const DeclRefExpr *varRef = result.Nodes.getNodeAs<clang::DeclRefExpr>("VarRef");
+    // if (varRef) { // && isInFile(sm, varRef)) { // && var->hasAttrs() ) {
+    //     matchVarRef(sm, varRef); 
+    // }
 
     const FieldDecl *field = result.Nodes.getNodeAs<clang::FieldDecl>("FieldDecl");
     if (field && field->hasAttrs() && isInFile(sm, field)) {
@@ -148,9 +148,7 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
     if (!func->hasBody())
         return true;
    
-    SourceRange sr(sm.getExpansionLoc(func->getSourceRange().getBegin()),
-                   sm.getExpansionLoc(func->getSourceRange().getEnd()));
-    replace(sr);
+    replace(sm, func->getSourceRange());
 
     return true;
 }
@@ -190,7 +188,7 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
         return true;    // keep it
 
     // showLoc("VarDecl......", sm, var);
-    replace(var->getSourceRange());
+    replace(sm, var->getSourceRange());
 
     return true;
 }
@@ -229,7 +227,7 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
         return true;    // keep it
 
     // showLoc("RecordDecl......", sm, record);
-    replace(record->getSourceRange());
+    replace(sm, record->getSourceRange());
 
     SourceLocation loc = findSemiAfterLocation(record->getEndLoc(), *ctx, true);
     rewriter.ReplaceText (loc, 1, " ");
@@ -301,15 +299,18 @@ bool ClosureDividerMatcher::isInFile(const clang::SourceManager &sm, const Decl 
             !file.compare(file.length() - target.length(), target.length(), target));
 }
 
-void ClosureDividerMatcher::replace(SourceRange range)
+void ClosureDividerMatcher::replace(const clang::SourceManager &sm, SourceRange range)
 {
-    std::string original = rewriter.getRewrittenText(range);
+    SourceRange expansion_range(sm.getExpansionLoc(range.getBegin()),
+                                sm.getExpansionLoc(range.getEnd()));
+
+    std::string original = rewriter.getRewrittenText(expansion_range);
 
     // erase all other than whitespace; 
     // keep source range line numbers intact for matchFunctionCall()
     std::regex non_ws("[^\\s]");
     string modified = std::regex_replace(original, non_ws, " ");
-    rewriter.ReplaceText(CharSourceRange::getTokenRange(range), modified);
+    rewriter.ReplaceText(CharSourceRange::getTokenRange(expansion_range), modified);
 
     parentRanges.push_back(range);
 }

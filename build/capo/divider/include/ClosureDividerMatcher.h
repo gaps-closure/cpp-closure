@@ -54,7 +54,7 @@ private:
     void showLoc(string msg, const clang::SourceManager &sm, const Expr *expr);
     void showLoc(string msg, const clang::SourceManager &sm, SourceLocation begin, SourceLocation end);
 
-    void replace(SourceRange range);
+    void replace(const clang::SourceManager &sm, SourceRange range);
     SourceLocation findSemiAfterLocation(SourceLocation loc, ASTContext &Ctx, bool IsDecl);
 };
 
