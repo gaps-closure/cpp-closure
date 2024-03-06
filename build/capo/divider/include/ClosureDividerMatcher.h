@@ -13,6 +13,7 @@
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Rewrite/Frontend/FixItRewriter.h"
+// #include "clang/Lex/Preprocessor.h"
 
 #include "Topology.h"
 
@@ -29,6 +30,7 @@ public:
          langOpts(compiler.getLangOpts()),
          rewriter(rewriter), 
          topology(topology) {
+        // compiler.getPreprocessor().SetSuppressIncludeNotFoundError(true);
     }
     
     void onEndOfTranslationUnit() override;

@@ -1,1 +1,1 @@
-bin/closure-divider --extra-arg=-I../test/websrv/refactored/Utils ../test/websrv/topology.json --
+bin/closure-divider --extra-arg=-I../test/websrv/refactored/Utils --extra-arg=-I../test/websrv/refactored/Communications ../test/websrv/topology.json --
