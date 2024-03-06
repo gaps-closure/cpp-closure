@@ -149,7 +149,26 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
     if (!func->hasBody(def))
         return true;
 
-    replace(sm, func->getSourceRange());
+    SourceRange range = func->getSourceRange();
+    unsigned line = sm.getExpansionLineNumber(range.getBegin());
+
+    SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);
+    SourceLocation nextline = sm.translateLineCol(sm.getMainFileID(), line, 1);
+    string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
+
+    if (pragma_begin.rfind("#pragma cle begin ", 0) == 0) {
+        SourceLocation thisline2 = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
+        SourceLocation nextline2 = sm.translateLineCol(sm.getMainFileID(), line + 2, 1);
+        string pragma_end = rewriter.getRewrittenText(SourceRange(thisline2, nextline2));
+        if (pragma_end.rfind("#pragma cle end ", 0) != 0) {
+            std::cerr << "No matching #pragma cle end: " << pragma_begin << endl;
+        }
+        SourceRange ext(thisline, range.getEnd());
+        replace(sm, ext);
+    }
+    else {
+        replace(sm, func->getSourceRange());
+    }
 
     // From clang doxygen:
     /// "The function body might be in any of the (re-)declarations of this
@@ -164,6 +183,13 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
         SourceLocation loc = findSemiAfterLocation(func->getEndLoc(), *ctx, true);
         rewriter.ReplaceText (loc, 1, " ");
     }
+
+    // SourceRange expansion_range(sm.getExpansionLoc(range.getBegin()),
+    //                             sm.getExpansionLoc(range.getEnd()));
+    // LangOptions langOpts;
+    // std::cout << Lexer::getSourceText(CharSourceRange::getTokenRange(expansion_range),
+    //                                     sm,
+    //                                     langOpts).str() << endl; 
 
     return true;
 }
@@ -323,7 +349,6 @@ void ClosureDividerMatcher::replace(const clang::SourceManager &sm, SourceRange 
                                 sm.getExpansionLoc(range.getEnd()));
 
     std::string original = rewriter.getRewrittenText(expansion_range);
-
     // erase all other than whitespace; 
     // keep source range line numbers intact for matchFunctionCall()
     std::regex non_ws("[^\\s]");
