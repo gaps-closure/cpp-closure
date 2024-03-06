@@ -150,12 +150,12 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
         return true;
 
     SourceRange range = func->getSourceRange();
-    unsigned line = sm.getExpansionLineNumber(range.getBegin());
+    unsigned line = sm.getExpansionLineNumber(range.getBegin());   // function signature
 
-    SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);
+    SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);   // the line before
     SourceLocation nextline = sm.translateLineCol(sm.getMainFileID(), line, 1);
-    string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
 
+    string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
     if (pragma_begin.rfind("#pragma cle begin ", 0) == 0) {
         SourceLocation thisline2 = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
         SourceLocation nextline2 = sm.translateLineCol(sm.getMainFileID(), line + 2, 1);
@@ -183,13 +183,6 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
         SourceLocation loc = findSemiAfterLocation(func->getEndLoc(), *ctx, true);
         rewriter.ReplaceText (loc, 1, " ");
     }
-
-    // SourceRange expansion_range(sm.getExpansionLoc(range.getBegin()),
-    //                             sm.getExpansionLoc(range.getEnd()));
-    // LangOptions langOpts;
-    // std::cout << Lexer::getSourceText(CharSourceRange::getTokenRange(expansion_range),
-    //                                     sm,
-    //                                     langOpts).str() << endl; 
 
     return true;
 }
