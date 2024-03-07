@@ -111,6 +111,21 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
         exit(1);
     }
 
+    using namespace clang::pp_trace;
+    FilterType Filters;
+    StringRef Pattern("PragmaDirective");  // = Pattern.trim();
+    bool Enabled = !Pattern.consume_front("-");
+    Expected<GlobPattern> Pat = GlobPattern::create(Pattern);
+    if (Pat)
+        Filters.emplace_back(std::move(*Pat), Enabled);
+    else
+        error(toString(Pat.takeError()));
+
+    std::error_code EC;
+    llvm::ToolOutputFile Out(OutputFileName, EC, llvm::sys::fs::OF_TextWithCRLF);
+    if (EC) 
+        error(EC.message());
+
     for (string level : topology.getLevels()) {
         llvm::outs() << outputDir << "/" << level << "\n";
         topology.setLevelInProgress(level);
@@ -135,31 +150,13 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
             // clang::tooling::ClangTool tool(database, cxxfile);
             // tool.run(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
 
-            clang::tooling::RefactoringTool Tool(database, cxxfile);
-            Tool.runAndSave(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
-
-            using namespace clang::pp_trace;
-            FilterType Filters;
-            StringRef Pattern("PragmaDirective");  // = Pattern.trim();
-            bool Enabled = !Pattern.consume_front("-");
-            Expected<GlobPattern> Pat = GlobPattern::create(Pattern);
-            if (Pat)
-                Filters.emplace_back(std::move(*Pat), Enabled);
-            else
-                error(toString(Pat.takeError()));
-
             // Create the tool and run the compilation.
             clang::tooling::ClangTool Toolx(database, cxxfile);
-
-            std::error_code EC;
-            llvm::ToolOutputFile Out(OutputFileName, EC,
-                                     llvm::sys::fs::OF_TextWithCRLF);
-            if (EC) 
-                error(EC.message());
             PPTraceFrontendActionFactory Factory(Filters, Out.os());
             Toolx.run(&Factory);
-
-            Out.keep();
+           
+            clang::tooling::RefactoringTool Tool(database, cxxfile);
+            Tool.runAndSave(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
         }
     }
 }
