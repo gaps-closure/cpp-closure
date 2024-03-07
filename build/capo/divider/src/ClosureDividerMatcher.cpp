@@ -358,17 +358,27 @@ int ClosureDividerMatcher::isEnclosedInCle(SourceRange &range)
 
 void ClosureDividerMatcher::addCleRangeOpen(SourceRange range, string pragma) 
 {
-    // Cle 
     cleRange.push_back(ClePair(range, range, pragma));
 }
 
-void ClosureDividerMatcher::addCleRangeClose(SourceRange range, string pargma) 
+void ClosureDividerMatcher::addCleRangeClose(SourceRange range, string pragma) 
 {
     if (cleRange.size() <= 0) {
-         llvm::outs() << "missing CLE begin\n";
+         llvm::outs() << "ERROR: missing CLE begin\n";
          return;
     }
     ClePair &last = cleRange[cleRange.size() - 1];
+    string pragma_begin = last.getPragma();
+    if (pragma_begin.find("#pragma cle begin ") == string::npos) {
+        llvm::outs() << "ERROR: pragma not matched: " << pragma_begin << " v.s. " << pragma << "\n";
+        return;
+    }
+    string name_begin = pragma_begin.substr(pragma_begin.find_last_of(" "));
+    string name_end = pragma.substr(pragma.find_last_of(" "));
+
+    if (name_begin.compare(name_end)) {
+        llvm::outs() << "ERROR: unmatched pragmas: " << pragma_begin << " v.s. " << pragma << "\n";
+    }
     last.setEnd(range);
 }
 
