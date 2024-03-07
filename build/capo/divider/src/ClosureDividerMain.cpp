@@ -2,14 +2,15 @@
 #include <filesystem>
 #include <fstream>
 
-#include "ClosureDividerMatcher.h"
-#include "Topology.h"
-
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang/Tooling/Refactoring.h"
+
+#include "ClosureDividerMatcher.h"
+#include "ClosureDividerPP.h"
+#include "Topology.h"
 
 using namespace llvm;
 using namespace clang;

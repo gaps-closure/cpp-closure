@@ -9,6 +9,7 @@ set(closure-divider_SOURCES
  "${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp"
  "${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp"
  "${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp"
+    ${CMAKE_CURRENT_SOURCE_DIR}/PPCallbacksTracker.cpp
 )
 
 # CONFIGURE THE TOOLS
