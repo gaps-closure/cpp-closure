@@ -191,7 +191,15 @@ void PPCallbacksTracker::PragmaDirective(SourceLocation Loc,
   SourceLocation x = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);   // the line before
   SourceRange range(Loc, x);
   CharSourceRange csr(range, false);
-  appendArgument("XXX", getSourceString(csr));
+
+  std::string pragma = getSourceString(csr).str();
+    if (pragma.rfind("#pragma cle begin ", 0) == 0) {
+        appendArgument("PRAGMA", "BEGIN");
+    }
+    else if (pragma.rfind("#pragma cle end ", 0) == 0) {
+        appendArgument("PRAGMA", "END");
+    }
+  appendArgument("XXX", pragma);
 }
 
 // Callback invoked when a #pragma comment directive is read.
