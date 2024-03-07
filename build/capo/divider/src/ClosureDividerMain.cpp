@@ -161,9 +161,14 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
             // clang::tooling::ClangTool tool(database, cxxfile);
             // tool.run(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
 
+            ClosureDividerMatcher::clearCleRange();
+
             clang::tooling::ClangTool Toolx(database, cxxfile);
             PPTraceFrontendActionFactory Factory(Filters, Out.os());
             Toolx.run(&Factory);
+            // for (SourceRange range : ClosureDividerMatcher::getCleRange()) {
+
+            // }
            
             clang::tooling::RefactoringTool Tool(database, cxxfile);
             Tool.runAndSave(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());

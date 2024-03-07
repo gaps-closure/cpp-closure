@@ -56,13 +56,13 @@ protected:
     }
 
     void EndSourceFileAction() override {
-        OS << "---\n";
-        for (const CallbackCall &Callback : CallbackCalls) {
-            OS << "- Callback: " << Callback.Name << "\n";
-            for (const Argument &Arg : Callback.Arguments)
-                OS << "  " << Arg.Name << ": " << Arg.Value << "\n";
-        }
-        OS << "...\n";
+        // OS << "---\n";
+        // for (const CallbackCall &Callback : CallbackCalls) {
+        //     OS << "- Callback: " << Callback.Name << "\n";
+        //     for (const Argument &Arg : Callback.Arguments)
+        //         OS << "  " << Arg.Name << ": " << Arg.Value << "\n";
+        // }
+        // OS << "...\n";
 
         CallbackCalls.clear();
     }

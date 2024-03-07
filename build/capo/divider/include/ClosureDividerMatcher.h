@@ -20,6 +20,37 @@
 using namespace clang;
 using namespace ast_matchers;
 
+class ClePair
+{
+private:
+    SourceRange begin;
+    SourceRange end;
+    string pragma;
+
+public:
+    ClePair(SourceRange begin, SourceRange end, string pragma) {
+        this->begin = begin;
+        this->end = end;
+        this->pragma = pragma;
+    }
+
+    SourceRange &getBegin() {
+        return begin;
+    }
+
+    SourceRange &getEnd() {
+        return end;
+    }
+
+    void setEnd(SourceRange end) {
+        this->end = end;
+    }
+
+    string &getPragma() {
+        return pragma;
+    }
+};
+
 class ClosureDividerMatcher
     : public clang::ast_matchers::MatchFinder::MatchCallback 
 {
@@ -37,11 +68,10 @@ public:
     void run(const clang::ast_matchers::MatchFinder::MatchResult &) override;
     bool isInFile(const clang::SourceManager &sm, const Decl *decl);
 
-    static void addCleRange(SourceRange range) {
-        cleRange.push_back(range);
-    }
+    static void addCleRangeOpen(SourceRange range, string pargma);
+    static void addCleRangeClose(SourceRange range, string pargma);
 
-    static vector<SourceRange> &getCleRange() {
+    static vector<ClePair> &getCleRange() {
         return cleRange;
     }
 
@@ -55,7 +85,7 @@ private:
     clang::Rewriter rewriter;
     Topology topology;
     vector<SourceRange> parentRanges;
-    static vector<SourceRange> cleRange;
+    static vector<ClePair> cleRange;
 
     bool matchFunctionDecl(const clang::SourceManager &sm, const FunctionDecl *func);
     bool matchFunctionCall(const clang::SourceManager &sm, const CallExpr *expr);

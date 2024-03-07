@@ -14,6 +14,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "PPCallbacksTracker.h"
+#include "ClosureDividerMatcher.h"
+
 #include "clang/Basic/FileManager.h"
 #include "clang/Lex/MacroArgs.h"
 #include "llvm/Support/raw_ostream.h"
@@ -195,9 +197,12 @@ void PPCallbacksTracker::PragmaDirective(SourceLocation Loc,
   std::string pragma = getSourceString(csr).str();
     if (pragma.rfind("#pragma cle begin ", 0) == 0) {
         appendArgument("PRAGMA", "BEGIN");
+
+        ClosureDividerMatcher::addCleRangeOpen(range, pragma);
     }
     else if (pragma.rfind("#pragma cle end ", 0) == 0) {
         appendArgument("PRAGMA", "END");
+        ClosureDividerMatcher::addCleRangeClose(range, pragma);
     }
   appendArgument("XXX", pragma);
 }

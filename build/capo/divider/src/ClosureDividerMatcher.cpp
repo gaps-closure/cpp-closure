@@ -16,6 +16,24 @@ using namespace clang;
 using namespace std;
 using namespace ast_matchers;
 
+vector<ClePair> ClosureDividerMatcher::cleRange;
+
+void ClosureDividerMatcher::addCleRangeOpen(SourceRange range, string pragma) 
+{
+    // Cle 
+    cleRange.push_back(ClePair(range, range, pragma));
+}
+
+void ClosureDividerMatcher::addCleRangeClose(SourceRange range, string pargma) 
+{
+    if (cleRange.size() <= 0) {
+         llvm::outs() << "missing CLE begin\n";
+         return;
+    }
+    ClePair &last = cleRange[cleRange.size() - 1];
+    last.setEnd(range);
+}
+
 ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
     clang::CompilerInstance &compiler,
     Topology &topology,
@@ -76,6 +94,12 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
 
     const auto recordDecl = cxxRecordDecl().bind("CXXRecordDecl");
     finder.addMatcher(recordDecl, &matcherHandler);
+
+    const SourceManager &sm = compiler.getSourceManager();
+    for (ClePair clePair : ClosureDividerMatcher::getCleRange()) {
+        clePair.getBegin().dump(sm);
+        clePair.getEnd().dump(sm);
+    }
 }
 
 void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result) 
