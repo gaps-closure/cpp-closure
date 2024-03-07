@@ -38,3 +38,5 @@
 clang-plugin
 clang-tutor
 divider
+test/websrv
+test/websrv.saved
