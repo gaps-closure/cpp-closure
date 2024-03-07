@@ -186,7 +186,9 @@ void PPCallbacksTracker::PragmaDirective(SourceLocation Loc,
   appendArgument("Loc", Loc);
   appendArgument("Introducer", Introducer, PragmaIntroducerKindStrings);
 
-  SourceLocation x = PP.getSourceManager().translateLineCol(PP.getSourceManager().getMainFileID(), 3, 1);   // the line before
+  SourceManager &sm = PP.getSourceManager();
+  unsigned line = sm.getExpansionLineNumber(Loc);
+  SourceLocation x = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);   // the line before
   SourceRange range(Loc, x);
   CharSourceRange csr(range, false);
   appendArgument("XXX", getSourceString(csr));
