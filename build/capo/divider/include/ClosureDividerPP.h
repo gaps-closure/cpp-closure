@@ -29,82 +29,61 @@ using namespace llvm;
 namespace clang {
 namespace pp_trace {
 
-static cl::OptionCategory Cat("pp-trace options");
-
-// static cl::opt<std::string> Callbacks(
-//     "callbacks", cl::init("*"),
-//     cl::desc("Comma-separated list of globs describing the list of callbacks "
-//              "to output. Globs are processed in order of appearance. Globs "
-//              "with the '-' prefix remove callbacks from the set. e.g. "
-//              "'*,-Macro*'."),
-//     cl::cat(Cat));
-
-static cl::opt<std::string> OutputFileName(
-    "output", cl::init("-"),
-    cl::desc("Output trace to the given file name or '-' for stdout."),
-    cl::cat(Cat));
-
-[[noreturn]] static void error(Twine Message) {
-  WithColor::error() << Message << '\n';
-  exit(1);
-}
-
 namespace {
 
 class PPTraceAction : public ASTFrontendAction {
 public:
-  PPTraceAction(const FilterType &Filters, raw_ostream &OS)
-      : Filters(Filters), OS(OS) {}
+    PPTraceAction(const FilterType &Filters, raw_ostream &OS)
+        : Filters(Filters), OS(OS) {}
 
 protected:
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                 StringRef InFile) override {
-    Preprocessor &PP = CI.getPreprocessor();
-    PP.addPPCallbacks(
-        std::make_unique<PPCallbacksTracker>(Filters, CallbackCalls, PP));
-    return std::make_unique<ASTConsumer>();
-  }
+    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
+                                                    StringRef InFile) override {
+        Preprocessor &PP = CI.getPreprocessor();
+        PP.addPPCallbacks(std::make_unique<PPCallbacksTracker>(Filters, CallbackCalls, PP));
 
-  bool BeginSourceFileAction(CompilerInstance &ci) override
-  {
-    // std::unique_ptr<Find_Includes> find_includes_callback(new Find_Includes());
-
-    // Preprocessor &pp = ci.getPreprocessor();
-    // pp.addPPCallbacks(std::move(find_includes_callback));
-    OS << "---BBBBBBBBBBBBB\n";
-    return true;
-  }
-
-  void EndSourceFileAction() override {
-    OS << "---\n";
-    for (const CallbackCall &Callback : CallbackCalls) {
-      OS << "- Callback: " << Callback.Name << "\n";
-      for (const Argument &Arg : Callback.Arguments)
-        OS << "  " << Arg.Name << ": " << Arg.Value << "\n";
+        return std::make_unique<ASTConsumer>();
     }
-    OS << "...\n";
 
-    CallbackCalls.clear();
-  }
+    bool BeginSourceFileAction(CompilerInstance &ci) override {
+        // std::unique_ptr<Find_Includes> find_includes_callback(new Find_Includes());
+
+        // Preprocessor &pp = ci.getPreprocessor();
+        // pp.addPPCallbacks(std::move(find_includes_callback));
+        return true;
+    }
+
+    void EndSourceFileAction() override {
+        OS << "---\n";
+        for (const CallbackCall &Callback : CallbackCalls) {
+            OS << "- Callback: " << Callback.Name << "\n";
+            for (const Argument &Arg : Callback.Arguments)
+                OS << "  " << Arg.Name << ": " << Arg.Value << "\n";
+        }
+        OS << "...\n";
+
+        CallbackCalls.clear();
+    }
 
 private:
-  const FilterType &Filters;
-  raw_ostream &OS;
-  std::vector<CallbackCall> CallbackCalls;
+    const FilterType &Filters;
+    raw_ostream &OS;
+    std::vector<CallbackCall> CallbackCalls;
 };
 
-class PPTraceFrontendActionFactory : public tooling::FrontendActionFactory {
+class PPTraceFrontendActionFactory : public tooling::FrontendActionFactory 
+{
 public:
-  PPTraceFrontendActionFactory(const FilterType &Filters, raw_ostream &OS)
-      : Filters(Filters), OS(OS) {}
+    PPTraceFrontendActionFactory(const FilterType &Filters, raw_ostream &OS)
+        : Filters(Filters), OS(OS) {}
 
-  std::unique_ptr<FrontendAction> create() override {
-    return std::make_unique<PPTraceAction>(Filters, OS);
-  }
+    std::unique_ptr<FrontendAction> create() override {
+        return std::make_unique<PPTraceAction>(Filters, OS);
+    }
 
 private:
-  const FilterType &Filters;
-  raw_ostream &OS;
+    const FilterType &Filters;
+    raw_ostream &OS;
 };
 } // namespace
 } // namespace pp_trace

@@ -39,7 +39,18 @@ static cl::opt<std::string> outputDir {
     cl::init("/tmp"), 
     cl::cat(ClosureDividerCategory)
 };
+
+static cl::opt<std::string> OutputFileName(
+    "output", cl::init("-"),
+    cl::desc("Output trace to the given file name or '-' for stdout."),
+    cl::cat(ClosureDividerCategory));
+
 static Topology topology;
+
+[[noreturn]] static void error(Twine Message) {
+    WithColor::error() << Message << '\n';
+    exit(1);
+}
 
 class ClosurePluginAction : public PluginASTAction 
 {
