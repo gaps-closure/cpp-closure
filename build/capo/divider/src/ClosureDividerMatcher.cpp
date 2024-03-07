@@ -95,11 +95,11 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
     const auto recordDecl = cxxRecordDecl().bind("CXXRecordDecl");
     finder.addMatcher(recordDecl, &matcherHandler);
 
-    const SourceManager &sm = compiler.getSourceManager();
-    for (ClePair clePair : ClosureDividerMatcher::getCleRange()) {
-        clePair.getBegin().dump(sm);
-        clePair.getEnd().dump(sm);
-    }
+    // const SourceManager &sm = compiler.getSourceManager();
+    // for (ClePair clePair : ClosureDividerMatcher::getCleRange()) {
+    //     clePair.getBegin().dump(sm);
+    //     clePair.getEnd().dump(sm);
+    // }
 }
 
 void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result) 
@@ -246,22 +246,31 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
         return true;    // keep it
 
     SourceRange range = var->getSourceRange();
-    unsigned line = sm.getExpansionLineNumber(range.getBegin());   // function signature
 
-    SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);   // the line before
-    SourceLocation nextline = sm.translateLineCol(sm.getMainFileID(), line, 1);
-
-    string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
-    if (pragma_begin.rfind("#pragma cle begin ", 0) == 0) {
-        replace(sm, SourceRange(thisline, nextline));
+    // llvm::outs() << isEnclosedInCle(range) << "================ \n";
+    int idx = isEnclosedInCle(range);
+    if (idx >= 0) {
+        ClePair clePair = cleRange[idx];
+        replace(sm, clePair.getBegin());
+        replace(sm, clePair.getEnd());
     }
 
-    SourceLocation thisline2 = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
-    SourceLocation nextline2 = sm.translateLineCol(sm.getMainFileID(), line + 2, 1);
-    string pragma_end = rewriter.getRewrittenText(SourceRange(thisline2, nextline2));
-    if (pragma_end.rfind("#pragma cle end ", 0) != 0) {
-        replace(sm, SourceRange(thisline2, nextline2));
-    }
+    // unsigned line = sm.getExpansionLineNumber(range.getBegin());   // function signature
+
+    // SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);   // the line before
+    // SourceLocation nextline = sm.translateLineCol(sm.getMainFileID(), line, 1);
+
+    // string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
+    // if (pragma_begin.rfind("#pragma cle begin ", 0) == 0) {
+    //     replace(sm, SourceRange(thisline, nextline));
+    // }
+
+    // SourceLocation thisline2 = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
+    // SourceLocation nextline2 = sm.translateLineCol(sm.getMainFileID(), line + 2, 1);
+    // string pragma_end = rewriter.getRewrittenText(SourceRange(thisline2, nextline2));
+    // if (pragma_end.rfind("#pragma cle end ", 0) != 0) {
+    //     replace(sm, SourceRange(thisline2, nextline2));
+    // }
 
     replace(sm, range);
 
@@ -378,6 +387,25 @@ bool ClosureDividerMatcher::isInFile(const clang::SourceManager &sm, const Decl 
 
     return (file.length() >= target.length() &&
             !file.compare(file.length() - target.length(), target.length(), target));
+}
+
+int ClosureDividerMatcher::isEnclosedInCle(SourceRange &range)
+{
+    int line = sm.getSpellingLineNumber(range.getBegin());
+
+    for (size_t i = 0; i < cleRange.size(); i++) {
+        ClePair clePair = cleRange[i];
+        SourceRange open = clePair.getBegin();
+        int lineOpen = sm.getSpellingLineNumber(open.getBegin());
+
+        SourceRange close = clePair.getEnd();
+        int lineClose = sm.getSpellingLineNumber(close.getBegin());
+
+        if (line > lineOpen && line < lineClose) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void ClosureDividerMatcher::replace(const clang::SourceManager &sm, SourceRange range)

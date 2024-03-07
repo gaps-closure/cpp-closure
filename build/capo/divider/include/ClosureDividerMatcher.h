@@ -60,7 +60,8 @@ public:
         :ctx(&compiler.getASTContext()), 
          langOpts(compiler.getLangOpts()),
          rewriter(rewriter), 
-         topology(topology) {
+         topology(topology),
+         sm(compiler.getSourceManager()) {
         // compiler.getPreprocessor().SetSuppressIncludeNotFoundError(true);
     }
     
@@ -85,6 +86,7 @@ private:
     clang::Rewriter rewriter;
     Topology topology;
     vector<SourceRange> parentRanges;
+    SourceManager &sm;
     static vector<ClePair> cleRange;
 
     bool matchFunctionDecl(const clang::SourceManager &sm, const FunctionDecl *func);
@@ -100,6 +102,7 @@ private:
     void showLoc(string msg, const clang::SourceManager &sm, SourceLocation begin, SourceLocation end);
 
     void replace(const clang::SourceManager &sm, SourceRange range);
+    int isEnclosedInCle(SourceRange &range);
     SourceLocation findSemiAfterLocation(SourceLocation loc, ASTContext &Ctx, bool IsDecl);
 };
 
