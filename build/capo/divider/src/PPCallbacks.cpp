@@ -21,7 +21,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace clang {
-namespace pp_trace {
+namespace pp_divider {
 
 // Get a "file:line:column" source location string.
 static std::string getSourceLocationString(Preprocessor &PP,
@@ -687,5 +687,5 @@ llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange Range) {
   return llvm::StringRef(B, E - B);
 }
 
-} // namespace pp_trace
+} // namespace pp_divider
 } // namespace clang

@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace clang {
-namespace pp_trace {
+namespace pp_divider {
 
 // This struct represents one callback function argument by name and value.
 struct Argument {
@@ -215,7 +215,7 @@ public:
   Preprocessor &PP;
 };
 
-} // namespace pp_trace
+} // namespace pp_divider
 } // namespace clang
 
 #endif // PP_CALLBACKS_H

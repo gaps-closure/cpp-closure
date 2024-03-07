@@ -29,7 +29,7 @@
 using namespace llvm;
 
 namespace clang {
-namespace pp_trace {
+namespace pp_divider {
 
 namespace {
 
@@ -88,7 +88,7 @@ private:
     raw_ostream &OS;
 };
 } // namespace
-} // namespace pp_trace
+} // namespace pp_divider
 } // namespace clang
 
 #endif

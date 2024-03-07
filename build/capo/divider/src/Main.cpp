@@ -122,7 +122,7 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
         exit(1);
     }
 
-    using namespace clang::pp_trace;
+    using namespace clang::pp_divider;
     FilterType Filters;
     StringRef Pattern("PragmaDirective");  // = Pattern.trim();
     bool Enabled = !Pattern.consume_front("-");
