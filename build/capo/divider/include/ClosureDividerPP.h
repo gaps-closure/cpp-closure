@@ -31,13 +31,13 @@ namespace pp_trace {
 
 static cl::OptionCategory Cat("pp-trace options");
 
-static cl::opt<std::string> Callbacks(
-    "callbacks", cl::init("*"),
-    cl::desc("Comma-separated list of globs describing the list of callbacks "
-             "to output. Globs are processed in order of appearance. Globs "
-             "with the '-' prefix remove callbacks from the set. e.g. "
-             "'*,-Macro*'."),
-    cl::cat(Cat));
+// static cl::opt<std::string> Callbacks(
+//     "callbacks", cl::init("*"),
+//     cl::desc("Comma-separated list of globs describing the list of callbacks "
+//              "to output. Globs are processed in order of appearance. Globs "
+//              "with the '-' prefix remove callbacks from the set. e.g. "
+//              "'*,-Macro*'."),
+//     cl::cat(Cat));
 
 static cl::opt<std::string> OutputFileName(
     "output", cl::init("-"),

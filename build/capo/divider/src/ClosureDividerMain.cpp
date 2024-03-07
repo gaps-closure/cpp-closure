@@ -141,6 +141,14 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
     }
 }
 
+static cl::opt<std::string> Callbacks(
+    "callbacks", cl::init("*"),
+    cl::desc("Comma-separated list of globs describing the list of callbacks "
+             "to output. Globs are processed in order of appearance. Globs "
+             "with the '-' prefix remove callbacks from the set. e.g. "
+             "'*,-Macro*'."),
+    cl::cat(ClosureDividerCategory));
+
 int main(int argc, const char **argv) 
 {
     // cl::ZeroOrMore and run it without positional arguments leads to crash
@@ -157,5 +165,46 @@ int main(int argc, const char **argv)
     // The first positional arugment is assumed to the topology.json.
     // Ideally it should be specified with a command line option. 
     // However, running the plugin without positional arguments leads to crash.
-    divide(eOptParser->getCompilations(), eOptParser->getSourcePathList()[0]);
+    // divide(eOptParser->getCompilations(), eOptParser->getSourcePathList()[0]);
+
+  using namespace clang::pp_trace;
+  InitLLVM X(argc, argv);
+  auto OptionsParser = clang::tooling::CommonOptionsParser::create(
+      argc, argv, Cat, llvm::cl::ZeroOrMore);
+  if (!OptionsParser)
+    error(toString(OptionsParser.takeError()));
+  // Parse the IgnoreCallbacks list into strings.
+  SmallVector<StringRef, 32> Patterns;
+  FilterType Filters;
+  StringRef(Callbacks).split(Patterns, ",",
+                             /*MaxSplit=*/-1, /*KeepEmpty=*/false);
+  for (StringRef Pattern : Patterns) {
+    Pattern = Pattern.trim();
+    bool Enabled = !Pattern.consume_front("-");
+    Expected<GlobPattern> Pat = GlobPattern::create(Pattern);
+    if (Pat)
+      Filters.emplace_back(std::move(*Pat), Enabled);
+    else
+      error(toString(Pat.takeError()));
+  }
+
+  // Create the tool and run the compilation.
+  clang::tooling::ClangTool Tool(OptionsParser->getCompilations(),
+                                 OptionsParser->getSourcePathList());
+
+  std::error_code EC;
+  llvm::ToolOutputFile Out(OutputFileName, EC, llvm::sys::fs::OF_TextWithCRLF);
+  if (EC)
+    error(EC.message());
+  PPTraceFrontendActionFactory Factory(Filters, Out.os());
+  int HadErrors = Tool.run(&Factory);
+
+  // If we had errors, exit early.
+  if (HadErrors)
+    return HadErrors;
+
+  Out.keep();
+
+  return 0;
+
 }
