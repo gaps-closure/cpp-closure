@@ -1,10 +1,5 @@
-﻿/*
- * Copyright (c) 2023 Peraton Labs
- * SPDX-License-Identifier: Apache-2.0
- * @author tchen
- */
-
-#pragma once
+﻿#ifndef ANNOTATION_H
+#define ANNOTATION_H
 
 #include <string>
 #include <vector>
@@ -46,3 +41,5 @@ Annotation() {}
         return this->line; 
     }
 };
+
+#endif // ANNOTATION_H
