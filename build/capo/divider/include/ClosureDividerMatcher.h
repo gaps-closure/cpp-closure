@@ -37,12 +37,25 @@ public:
     void run(const clang::ast_matchers::MatchFinder::MatchResult &) override;
     bool isInFile(const clang::SourceManager &sm, const Decl *decl);
 
+    static void addCleRange(SourceRange range) {
+        cleRange.push_back(range);
+    }
+
+    static vector<SourceRange> &getCleRange() {
+        return cleRange;
+    }
+
+    static void clearCleRange() {
+        cleRange.clear();
+    }
+
 private:
     clang::ASTContext *ctx;
     clang::LangOptions langOpts;
     clang::Rewriter rewriter;
     Topology topology;
     vector<SourceRange> parentRanges;
+    static vector<SourceRange> cleRange;
 
     bool matchFunctionDecl(const clang::SourceManager &sm, const FunctionDecl *func);
     bool matchFunctionCall(const clang::SourceManager &sm, const CallExpr *expr);
@@ -65,6 +78,7 @@ class ClosureMatcherASTConsumer : public clang::ASTConsumer
 public:
     explicit ClosureMatcherASTConsumer(clang::CompilerInstance &compiler, Topology &topology,
                                        bool mainFileOnly, clang::Rewriter &rewriter);
+
     void HandleTranslationUnit(clang::ASTContext &ctx) {
         finder.matchAST(ctx);
     }
