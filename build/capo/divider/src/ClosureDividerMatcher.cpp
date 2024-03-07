@@ -237,27 +237,9 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
         replace(sm, clePair.getEnd());
     }
 
-    // unsigned line = sm.getExpansionLineNumber(range.getBegin());   // function signature
-
-    // SourceLocation thisline = sm.translateLineCol(sm.getMainFileID(), line - 1, 1);   // the line before
-    // SourceLocation nextline = sm.translateLineCol(sm.getMainFileID(), line, 1);
-
-    // string pragma_begin = rewriter.getRewrittenText(SourceRange(thisline, nextline));
-    // if (pragma_begin.rfind("#pragma cle begin ", 0) == 0) {
-    //     replace(sm, SourceRange(thisline, nextline));
-    // }
-
-    // SourceLocation thisline2 = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
-    // SourceLocation nextline2 = sm.translateLineCol(sm.getMainFileID(), line + 2, 1);
-    // string pragma_end = rewriter.getRewrittenText(SourceRange(thisline2, nextline2));
-    // if (pragma_end.rfind("#pragma cle end ", 0) != 0) {
-    //     replace(sm, SourceRange(thisline2, nextline2));
-    // }
-
     replace(sm, range);
 
     // showLoc("VarDecl......", sm, var);
-    // replace(sm, var->getSourceRange());
 
     SourceLocation loc = findSemiAfterLocation(var->getEndLoc(), *ctx, true);
     rewriter.ReplaceText (loc, 1, " ");
