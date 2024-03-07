@@ -16,9 +16,9 @@ using namespace clang;
 using namespace std;
 using namespace ast_matchers;
 
-vector<ClePair> ClosureDividerMatcher::cleRange;
+vector<ClePair> Matcher::cleRange;
 
-ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
+MatcherASTConsumer::MatcherASTConsumer(
     clang::CompilerInstance &compiler,
     Topology &topology,
     bool mainFileOnly, 
@@ -80,7 +80,7 @@ ClosureMatcherASTConsumer::ClosureMatcherASTConsumer(
     finder.addMatcher(recordDecl, &matcherHandler);
 }
 
-void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result) 
+void Matcher::run(const MatchFinder::MatchResult &result) 
 {
     const clang::SourceManager &sm = *result.SourceManager;
 
@@ -137,7 +137,7 @@ void ClosureDividerMatcher::run(const MatchFinder::MatchResult &result)
     }
 }
 
-bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, const FunctionDecl *func)
+bool Matcher::matchFunctionDecl(const clang::SourceManager &sm, const FunctionDecl *func)
 {
     string &level = topology.getLevelInProgress();
     string funcName = func->getNameInfo().getAsString();
@@ -178,7 +178,7 @@ bool ClosureDividerMatcher::matchFunctionDecl(const clang::SourceManager &sm, co
     return true;
 }
 
-bool ClosureDividerMatcher::matchFunctionCall(const clang::SourceManager &sm, const CallExpr *call)
+bool Matcher::matchFunctionCall(const clang::SourceManager &sm, const CallExpr *call)
 {
     const FunctionDecl *callee = call->getDirectCallee();
     string funcName = callee->getNameInfo().getAsString();
@@ -204,7 +204,7 @@ bool ClosureDividerMatcher::matchFunctionCall(const clang::SourceManager &sm, co
     return true;
 }
 
-bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const VarDecl *var)
+bool Matcher::matchVarDecl(const clang::SourceManager &sm, const VarDecl *var)
 {
     string &level = topology.getLevelInProgress();
     string varName = var->getName().str();
@@ -231,7 +231,7 @@ bool ClosureDividerMatcher::matchVarDecl(const clang::SourceManager &sm, const V
     return true;
 }
 
-bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const DeclRefExpr *varRef)
+bool Matcher::matchVarRef(const clang::SourceManager &sm, const DeclRefExpr *varRef)
 {
     return true;  // TODO
 
@@ -256,7 +256,7 @@ bool ClosureDividerMatcher::matchVarRef(const clang::SourceManager &sm, const De
     return true;
 }
 
-bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, const CXXRecordDecl *record)
+bool Matcher::matchRecordDecl(const clang::SourceManager &sm, const CXXRecordDecl *record)
 {
     string &level = topology.getLevelInProgress();
     string className = record->getNameAsString();
@@ -277,7 +277,7 @@ bool ClosureDividerMatcher::matchRecordDecl(const clang::SourceManager &sm, cons
 /// of the semicolon following the statement.
 /// If no semicolon is found or the location is inside a macro, the returned
 /// source location will be invalid.
-SourceLocation ClosureDividerMatcher::findSemiAfterLocation(SourceLocation loc,
+SourceLocation Matcher::findSemiAfterLocation(SourceLocation loc,
     ASTContext &Ctx,
     bool IsDecl) 
 {
@@ -314,7 +314,7 @@ SourceLocation ClosureDividerMatcher::findSemiAfterLocation(SourceLocation loc,
     return tok.getLocation();
 }
 
-void ClosureDividerMatcher::onEndOfTranslationUnit() 
+void Matcher::onEndOfTranslationUnit() 
 {
     string file = topology.getOutputFile();
     llvm::outs() << "\t \t" << file << "\n";
@@ -328,7 +328,7 @@ void ClosureDividerMatcher::onEndOfTranslationUnit()
     //         .write(llvm::outs());
 }
 
-bool ClosureDividerMatcher::isInFile(const clang::SourceManager &sm, const Decl *decl)
+bool Matcher::isInFile(const clang::SourceManager &sm, const Decl *decl)
 {
     string file = sm.getFilename(decl->getLocation()).str();
     string &target = topology.getFileInProcess();
@@ -337,7 +337,7 @@ bool ClosureDividerMatcher::isInFile(const clang::SourceManager &sm, const Decl 
             !file.compare(file.length() - target.length(), target.length(), target));
 }
 
-int ClosureDividerMatcher::isEnclosedInCle(SourceRange &range)
+int Matcher::isEnclosedInCle(SourceRange &range)
 {
     int line = sm.getSpellingLineNumber(range.getBegin());
 
@@ -356,12 +356,12 @@ int ClosureDividerMatcher::isEnclosedInCle(SourceRange &range)
     return -1;
 }
 
-void ClosureDividerMatcher::addCleRangeOpen(SourceRange range, string pragma) 
+void Matcher::addCleRangeOpen(SourceRange range, string pragma) 
 {
     cleRange.push_back(ClePair(range, range, pragma));
 }
 
-void ClosureDividerMatcher::addCleRangeClose(SourceRange range, string pragma) 
+void Matcher::addCleRangeClose(SourceRange range, string pragma) 
 {
     if (cleRange.size() <= 0) {
          llvm::outs() << "ERROR: missing CLE begin\n";
@@ -382,7 +382,7 @@ void ClosureDividerMatcher::addCleRangeClose(SourceRange range, string pragma)
     last.setEnd(range);
 }
 
-void ClosureDividerMatcher::replace(const clang::SourceManager &sm, SourceRange range)
+void Matcher::replace(const clang::SourceManager &sm, SourceRange range)
 {
     SourceRange expansion_range(sm.getExpansionLoc(range.getBegin()),
                                 sm.getExpansionLoc(range.getEnd()));
@@ -397,7 +397,7 @@ void ClosureDividerMatcher::replace(const clang::SourceManager &sm, SourceRange 
     parentRanges.push_back(range);
 }
 
-void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, const Decl *decl)
+void Matcher::showLoc(string msg, const clang::SourceManager &sm, const Decl *decl)
 {
     showLoc(msg, sm, decl->getBeginLoc(), decl->getEndLoc());
 
@@ -406,7 +406,7 @@ void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, 
         std::cout << attr->getAnnotation().str() << std::endl;
 }
 
-void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, const Expr *expr)
+void Matcher::showLoc(string msg, const clang::SourceManager &sm, const Expr *expr)
 {
     showLoc(msg, sm, expr->getBeginLoc(), expr->getEndLoc());
 
@@ -415,7 +415,7 @@ void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, 
     //     std::cout << attr->getAnnotation().str() << std::endl;    
 }
 
-void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm, 
+void Matcher::showLoc(string msg, const clang::SourceManager &sm, 
     SourceLocation begin, SourceLocation end)
 {
     llvm::outs() << msg 
@@ -426,4 +426,4 @@ void ClosureDividerMatcher::showLoc(string msg, const clang::SourceManager &sm,
                 << sm.getSpellingColumnNumber(end) << "\n";
 }
 
-static ParsedAttrInfoRegistry::Add<ClosureAttrInfo> Y("cle", "cle annotator");
+static ParsedAttrInfoRegistry::Add<AttrInfo> Y("cle", "cle annotator");

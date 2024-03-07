@@ -1,8 +1,5 @@
-// DESCRIPTION:
-//    Declares the ClosureDivider visitor
-//
-#ifndef CLOSURE_DIVIDER_VISITOR_H
-#define CLOSURE_DIVIDER_VISITOR_H
+#ifndef VISITOR_H
+#define VISITOR_H
 
 #include <iostream>
 #include <filesystem>
@@ -17,12 +14,11 @@
 
 using namespace clang;
 
-class ClosureDividerVisitor
-    : public clang::RecursiveASTVisitor<ClosureDividerVisitor> 
+class Visitor
+    : public clang::RecursiveASTVisitor<Visitor> 
 {
 public:
-    explicit ClosureDividerVisitor(const clang::CompilerInstance &compiler,
-                                   Topology &topology)
+    explicit Visitor(const clang::CompilerInstance &compiler, Topology &topology)
        : ctx(&compiler.getASTContext()), 
          langOpts(compiler.getLangOpts()),
          topology(topology) {
@@ -30,7 +26,7 @@ public:
         init();
     }
 
-    ~ClosureDividerVisitor() {
+    ~Visitor() {
         finish();
     }
 

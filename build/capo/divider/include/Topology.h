@@ -4,7 +4,8 @@
  * @author tchen
  */
 
-#pragma once
+#ifndef TOPOLOGY_H
+#define TOPOLOGY_H
 
 #include <string>
 #include <vector>
@@ -95,3 +96,5 @@ public:
         return this->levelInProgress;
     }
 };
+
+#endif

@@ -1,9 +1,6 @@
-#ifndef CLOSURE_DIVIDER_MATCHER_H
-#define CLOSURE_DIVIDER_MATCHER_H
+#ifndef MATCHER_H
+#define MATCHER_H
 
-// #include <iostream>
-// #include <filesystem>
-// #include <fstream>
 #include <vector>
 
 #include "clang/AST/ASTConsumer.h"
@@ -51,11 +48,11 @@ public:
     }
 };
 
-class ClosureDividerMatcher
+class Matcher
     : public clang::ast_matchers::MatchFinder::MatchCallback 
 {
 public:
-    explicit ClosureDividerMatcher(const clang::CompilerInstance &compiler,
+    explicit Matcher(const clang::CompilerInstance &compiler,
                                    clang::Rewriter &rewriter, Topology topology)
         :ctx(&compiler.getASTContext()), 
          langOpts(compiler.getLangOpts()),
@@ -106,10 +103,10 @@ private:
     SourceLocation findSemiAfterLocation(SourceLocation loc, ASTContext &Ctx, bool IsDecl);
 };
 
-class ClosureMatcherASTConsumer : public clang::ASTConsumer 
+class MatcherASTConsumer : public clang::ASTConsumer 
 {
 public:
-    explicit ClosureMatcherASTConsumer(clang::CompilerInstance &compiler, Topology &topology,
+    explicit MatcherASTConsumer(clang::CompilerInstance &compiler, Topology &topology,
                                        bool mainFileOnly, clang::Rewriter &rewriter);
 
     void HandleTranslationUnit(clang::ASTContext &ctx) {
@@ -122,7 +119,7 @@ private:
     bool mainTUOnly = true;
 
     clang::ast_matchers::MatchFinder finder;
-    ClosureDividerMatcher matcherHandler;
+    Matcher matcherHandler;
 };
 
 #endif

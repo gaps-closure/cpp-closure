@@ -1,5 +1,5 @@
-#ifndef CLOSURE_DIVIDER_ATTR_H
-#define CLOSURE_DIVIDER_ATTR_H
+#ifndef ATTR_H
+#define ATTR_H
 
 #include "llvm/IR/Attributes.h"
 #include "llvm/Support/raw_ostream.h"
@@ -9,9 +9,9 @@
 
 using namespace clang;
 
-struct ClosureAttrInfo : public ParsedAttrInfo 
+struct AttrInfo : public ParsedAttrInfo 
 {
-    ClosureAttrInfo() {
+    AttrInfo() {
         NumArgs = 1;
         static constexpr Spelling S[] = {{ParsedAttr::AS_GNU, "cle_annotate"},
                                         {ParsedAttr::AS_C2x, "cle_annotate"},

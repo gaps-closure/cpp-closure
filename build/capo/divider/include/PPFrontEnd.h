@@ -1,5 +1,5 @@
-#ifndef CLOSURE_DIVIDER_PP_H
-#define CLOSURE_DIVIDER_PP_H
+#ifndef PP_FRONTEND_H
+#define PP_FRONTEND_H
 
 #include "PPCallbacks.h"
 #include "clang/AST/ASTConsumer.h"
@@ -33,16 +33,16 @@ namespace pp_trace {
 
 namespace {
 
-class PPTraceAction : public ASTFrontendAction {
+class PPFrontendAction : public ASTFrontendAction {
 public:
-    PPTraceAction(const FilterType &Filters, raw_ostream &OS)
+    PPFrontendAction(const FilterType &Filters, raw_ostream &OS)
         : Filters(Filters), OS(OS) {}
 
 protected:
     std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                     StringRef InFile) override {
         Preprocessor &PP = CI.getPreprocessor();
-        PP.addPPCallbacks(std::make_unique<PPCallbacksTracker>(Filters, CallbackCalls, PP));
+        PP.addPPCallbacks(std::make_unique<PPCallbacksClosure>(Filters, CallbackCalls, PP));
 
         return std::make_unique<ASTConsumer>();
     }
@@ -73,14 +73,14 @@ private:
     std::vector<CallbackCall> CallbackCalls;
 };
 
-class PPTraceFrontendActionFactory : public tooling::FrontendActionFactory 
+class PPFrontendActionFactory : public tooling::FrontendActionFactory 
 {
 public:
-    PPTraceFrontendActionFactory(const FilterType &Filters, raw_ostream &OS)
+    PPFrontendActionFactory(const FilterType &Filters, raw_ostream &OS)
         : Filters(Filters), OS(OS) {}
 
     std::unique_ptr<FrontendAction> create() override {
-        return std::make_unique<PPTraceAction>(Filters, OS);
+        return std::make_unique<PPFrontendAction>(Filters, OS);
     }
 
 private:

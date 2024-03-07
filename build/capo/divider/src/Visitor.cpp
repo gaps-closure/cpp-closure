@@ -13,7 +13,7 @@
 using namespace clang;
 using namespace std;
 
-void ClosureDividerVisitor::init()
+void Visitor::init()
 {
     for (auto level : topology.getLevels()) {
         string file = topology.getOutputDir() + "/" + level + "/" + topology.getFileInProcess();
@@ -25,7 +25,7 @@ void ClosureDividerVisitor::init()
     }
 }
 
-bool ClosureDividerVisitor::output(Decl *Decl)
+bool Visitor::output(Decl *Decl)
 {
     if (Decl->hasAttrs()) {
         auto attr = Decl->getAttr<clang::AnnotateAttr>();
@@ -63,7 +63,7 @@ bool ClosureDividerVisitor::output(Decl *Decl)
     }
 }
 
-void ClosureDividerVisitor::finish()
+void Visitor::finish()
 {
     for (auto it = fds.begin(); it != fds.end(); it++) {
         if (it->second != nullptr)
@@ -71,7 +71,7 @@ void ClosureDividerVisitor::finish()
     }
 }
 
-bool ClosureDividerVisitor::VisitCXXRecordDecl(CXXRecordDecl *Decl) 
+bool Visitor::VisitCXXRecordDecl(CXXRecordDecl *Decl) 
 {
     return output(Decl);
 
@@ -85,7 +85,7 @@ bool ClosureDividerVisitor::VisitCXXRecordDecl(CXXRecordDecl *Decl)
     // return true;
 }
 
-bool ClosureDividerVisitor::VisitFunctionDecl(FunctionDecl *Decl) 
+bool Visitor::VisitFunctionDecl(FunctionDecl *Decl) 
 {
     return output(Decl);
 
@@ -99,7 +99,7 @@ bool ClosureDividerVisitor::VisitFunctionDecl(FunctionDecl *Decl)
     // return true;
 }
 
-bool ClosureDividerVisitor::VisitVarDecl(VarDecl *Decl) 
+bool Visitor::VisitVarDecl(VarDecl *Decl) 
 {
     return output(Decl);
 
@@ -112,7 +112,7 @@ bool ClosureDividerVisitor::VisitVarDecl(VarDecl *Decl)
     // return true;
 }
 
-bool ClosureDividerVisitor::VisitFieldDecl(FieldDecl *Decl) 
+bool Visitor::VisitFieldDecl(FieldDecl *Decl) 
 {
     return output(Decl);
 
@@ -164,4 +164,4 @@ bool ClosureDividerVisitor::VisitFieldDecl(FieldDecl *Decl)
 //       /*Description=*/"Checks whether class, variable and function names "
 //                       "adhere to LLVM's guidelines");
 
-static ParsedAttrInfoRegistry::Add<ClosureAttrInfo> Y("cle", "cle annotator");
+static ParsedAttrInfoRegistry::Add<AttrInfo> Y("cle", "cle annotator");

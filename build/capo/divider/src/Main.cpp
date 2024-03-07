@@ -68,7 +68,7 @@ public:
         //     CI, topology, MainTuOnly,
         //     RewriterForCodeRefactor, ClassNameOpt, OldNameOpt, NewNameOpt);
 
-        return std::make_unique<ClosureMatcherASTConsumer>(
+        return std::make_unique<MatcherASTConsumer>(
             CI, topology, MainTuOnly, rewriter);
     }
 
@@ -147,7 +147,7 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
                 continue;
 
             // suffix is a path starting from the point after the output directory
-            // it is used in ClosureDividerMatcher::isInFile()
+            // it is used in Matcher::isInFile()
             string suffix = createTargetDir(sourcePath, outputDir, level, path);
             topology.setFileInProcess(suffix);
 
@@ -161,11 +161,11 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
             // clang::tooling::ClangTool tool(database, cxxfile);
             // tool.run(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
 
-            ClosureDividerMatcher::clearCleRange();
+            Matcher::clearCleRange();
 
             // run the preprocessor callback to get the #pragma begin/end pair
             clang::tooling::ClangTool Toolx(database, cxxfile);
-            PPTraceFrontendActionFactory Factory(Filters, Out.os());
+            PPFrontendActionFactory Factory(Filters, Out.os());
             Toolx.run(&Factory);
            
             clang::tooling::RefactoringTool Tool(database, cxxfile);

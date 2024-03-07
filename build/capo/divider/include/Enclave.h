@@ -1,10 +1,5 @@
-﻿/*
- * Copyright (c) 2023 Peraton Labs
- * SPDX-License-Identifier: Apache-2.0
- * @author tchen
- */
-
-#pragma once
+﻿#ifndef ENCLAVE_H
+#define ENCLAVE_H
 
 #include <string>
 #include <vector>
@@ -37,3 +32,5 @@ public:
         return this->assignedClasses; 
     }
 };
+
+#endif // ENCLAVE_H

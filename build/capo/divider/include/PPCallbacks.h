@@ -1,25 +1,5 @@
-//===--- PPCallbacksTracker.h - Preprocessor tracking -----------*- C++ -*-===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-///
-/// \file
-/// Classes and definitions for preprocessor tracking.
-///
-/// The core definition is the PPCallbacksTracker class, derived from Clang's
-/// PPCallbacks class from the Lex library, which overrides all the callbacks
-/// and collects information about each callback call, saving it in a
-/// data structure built up of CallbackCall and Argument objects, which
-/// record the preprocessor callback name and arguments in high-level string
-/// form for later inspection.
-///
-//===----------------------------------------------------------------------===//
-
-#ifndef PPTRACE_PPCALLBACKSTRACKER_H
-#define PPTRACE_PPCALLBACKSTRACKER_H
+#ifndef PP_CALLBACKS_H
+#define PP_CALLBACKS_H
 
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
@@ -71,18 +51,18 @@ using FilterType = std::vector<std::pair<llvm::GlobPattern, bool>>;
 /// overridden callback functions are defined.  The remaining functions are
 /// helpers for recording the trace data, to reduce the coupling between it
 /// and the recorded data structure.
-class PPCallbacksTracker : public PPCallbacks {
+class PPCallbacksClosure : public PPCallbacks {
 public:
   /// Note that all of the arguments are references, and owned
   /// by the caller.
   /// \param Filters - List of (Glob,Enabled) pairs used to filter callbacks.
   /// \param CallbackCalls - Trace buffer.
   /// \param PP - The preprocessor.  Needed for getting some argument strings.
-  PPCallbacksTracker(const FilterType &Filters,
+  PPCallbacksClosure(const FilterType &Filters,
                      std::vector<CallbackCall> &CallbackCalls,
                      Preprocessor &PP);
 
-  ~PPCallbacksTracker() override;
+  ~PPCallbacksClosure() override;
 
   // Overridden callback functions.
 
@@ -238,4 +218,4 @@ public:
 } // namespace pp_trace
 } // namespace clang
 
-#endif // PPTRACE_PPCALLBACKSTRACKER_H
+#endif // PP_CALLBACKS_H

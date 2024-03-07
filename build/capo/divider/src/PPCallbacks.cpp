@@ -1,4 +1,4 @@
-//===--- PPCallbacksTracker.cpp - Preprocessor tracker -*--*---------------===//
+//===--- PPCallbacksClosure.cpp - Preprocessor tracker -*--*---------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -96,19 +96,19 @@ static const char *const MappingStrings[] = { "0",          "MAP_IGNORE",
                                               "MAP_REMARK", "MAP_WARNING",
                                               "MAP_ERROR",  "MAP_FATAL" };
 
-// PPCallbacksTracker functions.
+// PPCallbacksClosure functions.
 
-PPCallbacksTracker::PPCallbacksTracker(const FilterType &Filters,
+PPCallbacksClosure::PPCallbacksClosure(const FilterType &Filters,
                                        std::vector<CallbackCall> &CallbackCalls,
                                        Preprocessor &PP)
     : CallbackCalls(CallbackCalls), Filters(Filters), PP(PP) {}
 
-PPCallbacksTracker::~PPCallbacksTracker() {}
+PPCallbacksClosure::~PPCallbacksClosure() {}
 
 // Callback functions.
 
 // Callback invoked whenever a source file is entered or exited.
-void PPCallbacksTracker::FileChanged(SourceLocation Loc,
+void PPCallbacksClosure::FileChanged(SourceLocation Loc,
                                      PPCallbacks::FileChangeReason Reason,
                                      SrcMgr::CharacteristicKind FileType,
                                      FileID PrevFID) {
@@ -121,7 +121,7 @@ void PPCallbacksTracker::FileChanged(SourceLocation Loc,
 
 // Callback invoked whenever a source file is skipped as the result
 // of header guard optimization.
-void PPCallbacksTracker::FileSkipped(const FileEntryRef &SkippedFile,
+void PPCallbacksClosure::FileSkipped(const FileEntryRef &SkippedFile,
                                      const Token &FilenameTok,
                                      SrcMgr::CharacteristicKind FileType) {
   beginCallback("FileSkipped");
@@ -133,7 +133,7 @@ void PPCallbacksTracker::FileSkipped(const FileEntryRef &SkippedFile,
 // Callback invoked whenever an inclusion directive results in a
 // file-not-found error.
 bool
-PPCallbacksTracker::FileNotFound(llvm::StringRef FileName,
+PPCallbacksClosure::FileNotFound(llvm::StringRef FileName,
                                  llvm::SmallVectorImpl<char> &RecoveryPath) {
   beginCallback("FileNotFound");
   appendFilePathArgument("FileName", FileName);
@@ -143,7 +143,7 @@ PPCallbacksTracker::FileNotFound(llvm::StringRef FileName,
 // Callback invoked whenever an inclusion directive of
 // any kind (#include, #import, etc.) has been processed, regardless
 // of whether the inclusion will actually result in an inclusion.
-void PPCallbacksTracker::InclusionDirective(
+void PPCallbacksClosure::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, llvm::StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
     llvm::StringRef SearchPath, llvm::StringRef RelativePath,
@@ -161,7 +161,7 @@ void PPCallbacksTracker::InclusionDirective(
 
 // Callback invoked whenever there was an explicit module-import
 // syntax.
-void PPCallbacksTracker::moduleImport(SourceLocation ImportLoc,
+void PPCallbacksClosure::moduleImport(SourceLocation ImportLoc,
                                       ModuleIdPath Path,
                                       const Module *Imported) {
   beginCallback("moduleImport");
@@ -172,17 +172,17 @@ void PPCallbacksTracker::moduleImport(SourceLocation ImportLoc,
 
 // Callback invoked when the end of the main file is reached.
 // No subsequent callbacks will be made.
-void PPCallbacksTracker::EndOfMainFile() { beginCallback("EndOfMainFile"); }
+void PPCallbacksClosure::EndOfMainFile() { beginCallback("EndOfMainFile"); }
 
 // Callback invoked when a #ident or #sccs directive is read.
-void PPCallbacksTracker::Ident(SourceLocation Loc, llvm::StringRef Str) {
+void PPCallbacksClosure::Ident(SourceLocation Loc, llvm::StringRef Str) {
   beginCallback("Ident");
   appendArgument("Loc", Loc);
   appendArgument("Str", Str);
 }
 
 // Callback invoked when start reading any pragma directive.
-void PPCallbacksTracker::PragmaDirective(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDirective(SourceLocation Loc,
                                          PragmaIntroducerKind Introducer) {
   beginCallback("PragmaDirective");
   appendArgument("Loc", Loc);
@@ -198,17 +198,17 @@ void PPCallbacksTracker::PragmaDirective(SourceLocation Loc,
     if (pragma.rfind("#pragma cle begin ", 0) == 0) {
         appendArgument("PRAGMA", "BEGIN");
 
-        ClosureDividerMatcher::addCleRangeOpen(range, pragma);
+        Matcher::addCleRangeOpen(range, pragma);
     }
     else if (pragma.rfind("#pragma cle end ", 0) == 0) {
         appendArgument("PRAGMA", "END");
-        ClosureDividerMatcher::addCleRangeClose(range, pragma);
+        Matcher::addCleRangeClose(range, pragma);
     }
   appendArgument("XXX", pragma);
 }
 
 // Callback invoked when a #pragma comment directive is read.
-void PPCallbacksTracker::PragmaComment(SourceLocation Loc,
+void PPCallbacksClosure::PragmaComment(SourceLocation Loc,
                                        const IdentifierInfo *Kind,
                                        llvm::StringRef Str) {
   beginCallback("PragmaComment");
@@ -219,7 +219,7 @@ void PPCallbacksTracker::PragmaComment(SourceLocation Loc,
 
 // Callback invoked when a #pragma detect_mismatch directive is
 // read.
-void PPCallbacksTracker::PragmaDetectMismatch(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDetectMismatch(SourceLocation Loc,
                                               llvm::StringRef Name,
                                               llvm::StringRef Value) {
   beginCallback("PragmaDetectMismatch");
@@ -229,7 +229,7 @@ void PPCallbacksTracker::PragmaDetectMismatch(SourceLocation Loc,
 }
 
 // Callback invoked when a #pragma clang __debug directive is read.
-void PPCallbacksTracker::PragmaDebug(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDebug(SourceLocation Loc,
                                      llvm::StringRef DebugType) {
   beginCallback("PragmaDebug");
   appendArgument("Loc", Loc);
@@ -237,7 +237,7 @@ void PPCallbacksTracker::PragmaDebug(SourceLocation Loc,
 }
 
 // Callback invoked when a #pragma message directive is read.
-void PPCallbacksTracker::PragmaMessage(SourceLocation Loc,
+void PPCallbacksClosure::PragmaMessage(SourceLocation Loc,
                                        llvm::StringRef Namespace,
                                        PPCallbacks::PragmaMessageKind Kind,
                                        llvm::StringRef Str) {
@@ -251,7 +251,7 @@ void PPCallbacksTracker::PragmaMessage(SourceLocation Loc,
 
 // Callback invoked when a #pragma gcc diagnostic push directive
 // is read.
-void PPCallbacksTracker::PragmaDiagnosticPush(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDiagnosticPush(SourceLocation Loc,
                                               llvm::StringRef Namespace) {
   beginCallback("PragmaDiagnosticPush");
   appendArgument("Loc", Loc);
@@ -260,7 +260,7 @@ void PPCallbacksTracker::PragmaDiagnosticPush(SourceLocation Loc,
 
 // Callback invoked when a #pragma gcc diagnostic pop directive
 // is read.
-void PPCallbacksTracker::PragmaDiagnosticPop(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDiagnosticPop(SourceLocation Loc,
                                              llvm::StringRef Namespace) {
   beginCallback("PragmaDiagnosticPop");
   appendArgument("Loc", Loc);
@@ -268,7 +268,7 @@ void PPCallbacksTracker::PragmaDiagnosticPop(SourceLocation Loc,
 }
 
 // Callback invoked when a #pragma gcc diagnostic directive is read.
-void PPCallbacksTracker::PragmaDiagnostic(SourceLocation Loc,
+void PPCallbacksClosure::PragmaDiagnostic(SourceLocation Loc,
                                           llvm::StringRef Namespace,
                                           diag::Severity Mapping,
                                           llvm::StringRef Str) {
@@ -281,7 +281,7 @@ void PPCallbacksTracker::PragmaDiagnostic(SourceLocation Loc,
 
 // Called when an OpenCL extension is either disabled or
 // enabled with a pragma.
-void PPCallbacksTracker::PragmaOpenCLExtension(SourceLocation NameLoc,
+void PPCallbacksClosure::PragmaOpenCLExtension(SourceLocation NameLoc,
                                                const IdentifierInfo *Name,
                                                SourceLocation StateLoc,
                                                unsigned State) {
@@ -293,7 +293,7 @@ void PPCallbacksTracker::PragmaOpenCLExtension(SourceLocation NameLoc,
 }
 
 // Callback invoked when a #pragma warning directive is read.
-void PPCallbacksTracker::PragmaWarning(SourceLocation Loc,
+void PPCallbacksClosure::PragmaWarning(SourceLocation Loc,
                                        PragmaWarningSpecifier WarningSpec,
                                        llvm::ArrayRef<int> Ids) {
   beginCallback("PragmaWarning");
@@ -313,21 +313,21 @@ void PPCallbacksTracker::PragmaWarning(SourceLocation Loc,
 }
 
 // Callback invoked when a #pragma warning(push) directive is read.
-void PPCallbacksTracker::PragmaWarningPush(SourceLocation Loc, int Level) {
+void PPCallbacksClosure::PragmaWarningPush(SourceLocation Loc, int Level) {
   beginCallback("PragmaWarningPush");
   appendArgument("Loc", Loc);
   appendArgument("Level", Level);
 }
 
 // Callback invoked when a #pragma warning(pop) directive is read.
-void PPCallbacksTracker::PragmaWarningPop(SourceLocation Loc) {
+void PPCallbacksClosure::PragmaWarningPop(SourceLocation Loc) {
   beginCallback("PragmaWarningPop");
   appendArgument("Loc", Loc);
 }
 
 // Callback invoked when a #pragma execution_character_set(push) directive
 // is read.
-void PPCallbacksTracker::PragmaExecCharsetPush(SourceLocation Loc,
+void PPCallbacksClosure::PragmaExecCharsetPush(SourceLocation Loc,
                                                StringRef Str) {
   beginCallback("PragmaExecCharsetPush");
   appendArgument("Loc", Loc);
@@ -336,14 +336,14 @@ void PPCallbacksTracker::PragmaExecCharsetPush(SourceLocation Loc,
 
 // Callback invoked when a #pragma execution_character_set(pop) directive
 // is read.
-void PPCallbacksTracker::PragmaExecCharsetPop(SourceLocation Loc) {
+void PPCallbacksClosure::PragmaExecCharsetPop(SourceLocation Loc) {
   beginCallback("PragmaExecCharsetPop");
   appendArgument("Loc", Loc);
 }
 
 // Called by Preprocessor::HandleMacroExpandedIdentifier when a
 // macro invocation is found.
-void PPCallbacksTracker::MacroExpands(const Token &MacroNameTok,
+void PPCallbacksClosure::MacroExpands(const Token &MacroNameTok,
                                       const MacroDefinition &MacroDefinition,
                                       SourceRange Range,
                                       const MacroArgs *Args) {
@@ -355,7 +355,7 @@ void PPCallbacksTracker::MacroExpands(const Token &MacroNameTok,
 }
 
 // Hook called whenever a macro definition is seen.
-void PPCallbacksTracker::MacroDefined(const Token &MacroNameTok,
+void PPCallbacksClosure::MacroDefined(const Token &MacroNameTok,
                                       const MacroDirective *MacroDirective) {
   beginCallback("MacroDefined");
   appendArgument("MacroNameTok", MacroNameTok);
@@ -363,7 +363,7 @@ void PPCallbacksTracker::MacroDefined(const Token &MacroNameTok,
 }
 
 // Hook called whenever a macro #undef is seen.
-void PPCallbacksTracker::MacroUndefined(const Token &MacroNameTok,
+void PPCallbacksClosure::MacroUndefined(const Token &MacroNameTok,
                                         const MacroDefinition &MacroDefinition,
                                         const MacroDirective *Undef) {
   beginCallback("MacroUndefined");
@@ -372,7 +372,7 @@ void PPCallbacksTracker::MacroUndefined(const Token &MacroNameTok,
 }
 
 // Hook called whenever the 'defined' operator is seen.
-void PPCallbacksTracker::Defined(const Token &MacroNameTok,
+void PPCallbacksClosure::Defined(const Token &MacroNameTok,
                                  const MacroDefinition &MacroDefinition,
                                  SourceRange Range) {
   beginCallback("Defined");
@@ -382,14 +382,14 @@ void PPCallbacksTracker::Defined(const Token &MacroNameTok,
 }
 
 // Hook called when a source range is skipped.
-void PPCallbacksTracker::SourceRangeSkipped(SourceRange Range,
+void PPCallbacksClosure::SourceRangeSkipped(SourceRange Range,
                                             SourceLocation EndifLoc) {
   beginCallback("SourceRangeSkipped");
   appendArgument("Range", SourceRange(Range.getBegin(), EndifLoc));
 }
 
 // Hook called whenever an #if is seen.
-void PPCallbacksTracker::If(SourceLocation Loc, SourceRange ConditionRange,
+void PPCallbacksClosure::If(SourceLocation Loc, SourceRange ConditionRange,
                             ConditionValueKind ConditionValue) {
   beginCallback("If");
   appendArgument("Loc", Loc);
@@ -398,7 +398,7 @@ void PPCallbacksTracker::If(SourceLocation Loc, SourceRange ConditionRange,
 }
 
 // Hook called whenever an #elif is seen.
-void PPCallbacksTracker::Elif(SourceLocation Loc, SourceRange ConditionRange,
+void PPCallbacksClosure::Elif(SourceLocation Loc, SourceRange ConditionRange,
                               ConditionValueKind ConditionValue,
                               SourceLocation IfLoc) {
   beginCallback("Elif");
@@ -409,7 +409,7 @@ void PPCallbacksTracker::Elif(SourceLocation Loc, SourceRange ConditionRange,
 }
 
 // Hook called whenever an #ifdef is seen.
-void PPCallbacksTracker::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
+void PPCallbacksClosure::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                                const MacroDefinition &MacroDefinition) {
   beginCallback("Ifdef");
   appendArgument("Loc", Loc);
@@ -418,7 +418,7 @@ void PPCallbacksTracker::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
 }
 
 // Hook called whenever an #ifndef is seen.
-void PPCallbacksTracker::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
+void PPCallbacksClosure::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
                                 const MacroDefinition &MacroDefinition) {
   beginCallback("Ifndef");
   appendArgument("Loc", Loc);
@@ -427,14 +427,14 @@ void PPCallbacksTracker::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
 }
 
 // Hook called whenever an #else is seen.
-void PPCallbacksTracker::Else(SourceLocation Loc, SourceLocation IfLoc) {
+void PPCallbacksClosure::Else(SourceLocation Loc, SourceLocation IfLoc) {
   beginCallback("Else");
   appendArgument("Loc", Loc);
   appendArgument("IfLoc", IfLoc);
 }
 
 // Hook called whenever an #endif is seen.
-void PPCallbacksTracker::Endif(SourceLocation Loc, SourceLocation IfLoc) {
+void PPCallbacksClosure::Endif(SourceLocation Loc, SourceLocation IfLoc) {
   beginCallback("Endif");
   appendArgument("Loc", Loc);
   appendArgument("IfLoc", IfLoc);
@@ -443,7 +443,7 @@ void PPCallbacksTracker::Endif(SourceLocation Loc, SourceLocation IfLoc) {
 // Helper functions.
 
 // Start a new callback.
-void PPCallbacksTracker::beginCallback(const char *Name) {
+void PPCallbacksClosure::beginCallback(const char *Name) {
   auto R = CallbackIsEnabled.try_emplace(Name, false);
   if (R.second) {
     llvm::StringRef N(Name);
@@ -458,12 +458,12 @@ void PPCallbacksTracker::beginCallback(const char *Name) {
 }
 
 // Append a bool argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, bool Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, bool Value) {
   appendArgument(Name, (Value ? "true" : "false"));
 }
 
 // Append an int argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, int Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, int Value) {
   std::string Str;
   llvm::raw_string_ostream SS(Str);
   SS << Value;
@@ -471,37 +471,37 @@ void PPCallbacksTracker::appendArgument(const char *Name, int Value) {
 }
 
 // Append a string argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, const char *Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, const char *Value) {
   if (DisableTrace)
     return;
   CallbackCalls.back().Arguments.push_back(Argument{Name, Value});
 }
 
 // Append a string object argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         llvm::StringRef Value) {
   appendArgument(Name, Value.str());
 }
 
 // Append a string object argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const std::string &Value) {
   appendArgument(Name, Value.c_str());
 }
 
 // Append a token argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, const Token &Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, const Token &Value) {
   appendArgument(Name, PP.getSpelling(Value));
 }
 
 // Append an enum argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, int Value,
+void PPCallbacksClosure::appendArgument(const char *Name, int Value,
                                         const char *const Strings[]) {
   appendArgument(Name, Strings[Value]);
 }
 
 // Append a FileID argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, FileID Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, FileID Value) {
   if (Value.isInvalid()) {
     appendArgument(Name, "(invalid)");
     return;
@@ -515,7 +515,7 @@ void PPCallbacksTracker::appendArgument(const char *Name, FileID Value) {
 }
 
 // Append a FileEntry argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const FileEntry *Value) {
   if (!Value) {
     appendArgument(Name, "(null)");
@@ -525,7 +525,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a SourceLocation argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         SourceLocation Value) {
   if (Value.isInvalid()) {
     appendArgument(Name, "(invalid)");
@@ -535,7 +535,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a SourceRange argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, SourceRange Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, SourceRange Value) {
   if (DisableTrace)
     return;
   if (Value.isInvalid()) {
@@ -550,7 +550,7 @@ void PPCallbacksTracker::appendArgument(const char *Name, SourceRange Value) {
 }
 
 // Append a CharSourceRange argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         CharSourceRange Value) {
   if (Value.isInvalid()) {
     appendArgument(Name, "(invalid)");
@@ -560,7 +560,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a SourceLocation argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, ModuleIdPath Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, ModuleIdPath Value) {
   if (DisableTrace)
     return;
   std::string Str;
@@ -578,7 +578,7 @@ void PPCallbacksTracker::appendArgument(const char *Name, ModuleIdPath Value) {
 }
 
 // Append an IdentifierInfo argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const IdentifierInfo *Value) {
   if (!Value) {
     appendArgument(Name, "(null)");
@@ -588,7 +588,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a MacroDirective argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const MacroDirective *Value) {
   if (!Value) {
     appendArgument(Name, "(null)");
@@ -598,7 +598,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a MacroDefinition argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const MacroDefinition &Value) {
   std::string Str;
   llvm::raw_string_ostream SS(Str);
@@ -617,7 +617,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a MacroArgs argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name,
+void PPCallbacksClosure::appendArgument(const char *Name,
                                         const MacroArgs *Value) {
   if (!Value) {
     appendArgument(Name, "(null)");
@@ -654,7 +654,7 @@ void PPCallbacksTracker::appendArgument(const char *Name,
 }
 
 // Append a Module argument to the top trace item.
-void PPCallbacksTracker::appendArgument(const char *Name, const Module *Value) {
+void PPCallbacksClosure::appendArgument(const char *Name, const Module *Value) {
   if (!Value) {
     appendArgument(Name, "(null)");
     return;
@@ -663,7 +663,7 @@ void PPCallbacksTracker::appendArgument(const char *Name, const Module *Value) {
 }
 
 // Append a double-quoted argument to the top trace item.
-void PPCallbacksTracker::appendQuotedArgument(const char *Name,
+void PPCallbacksClosure::appendQuotedArgument(const char *Name,
                                               const std::string &Value) {
   std::string Str;
   llvm::raw_string_ostream SS(Str);
@@ -672,7 +672,7 @@ void PPCallbacksTracker::appendQuotedArgument(const char *Name,
 }
 
 // Append a double-quoted file path argument to the top trace item.
-void PPCallbacksTracker::appendFilePathArgument(const char *Name,
+void PPCallbacksClosure::appendFilePathArgument(const char *Name,
                                                 llvm::StringRef Value) {
   std::string Path(Value);
   // YAML treats backslash as escape, so use forward slashes.
@@ -681,7 +681,7 @@ void PPCallbacksTracker::appendFilePathArgument(const char *Name,
 }
 
 // Get the raw source string of the range.
-llvm::StringRef PPCallbacksTracker::getSourceString(CharSourceRange Range) {
+llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange Range) {
   const char *B = PP.getSourceManager().getCharacterData(Range.getBegin());
   const char *E = PP.getSourceManager().getCharacterData(Range.getEnd());
   return llvm::StringRef(B, E - B);
