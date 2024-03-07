@@ -1,7 +1,7 @@
 #ifndef CLOSURE_DIVIDER_PP_H
 #define CLOSURE_DIVIDER_PP_H
 
-#include "PPCallbacksTracker.h"
+#include "ClosureDividerPPCallbacks.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/Basic/SourceManager.h"

@@ -3,13 +3,13 @@ set(CLOSURE_TOOLS
 )
 
 set(closure-divider_SOURCES
- "${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMain.cpp"
- "${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerVisitor.cpp"
- "${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMatcher.cpp"
- "${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp"
- "${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp"
- "${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp"
-    ${CMAKE_CURRENT_SOURCE_DIR}/PPCallbacksTracker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerVisitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerPPCallbacks.cpp
 )
 
 # CONFIGURE THE TOOLS
