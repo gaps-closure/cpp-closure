@@ -161,7 +161,6 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
             // clang::tooling::ClangTool tool(database, cxxfile);
             // tool.run(clang::tooling::newFrontendActionFactory<ClosurePluginAction>().get());
 
-            // Create the tool and run the compilation.
             clang::tooling::ClangTool Toolx(database, cxxfile);
             PPTraceFrontendActionFactory Factory(Filters, Out.os());
             Toolx.run(&Factory);

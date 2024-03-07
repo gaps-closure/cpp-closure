@@ -1,3 +1,5 @@
+#ifndef CLOSURE_DIVIDER_PP_H
+#define CLOSURE_DIVIDER_PP_H
 
 #include "PPCallbacksTracker.h"
 #include "clang/AST/ASTConsumer.h"
@@ -88,3 +90,5 @@ private:
 } // namespace
 } // namespace pp_trace
 } // namespace clang
+
+#endif
