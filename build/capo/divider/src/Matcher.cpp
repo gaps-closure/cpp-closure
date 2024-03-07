@@ -8,8 +8,8 @@
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/Sema/Sema.h"
 
-#include "ClosureDividerAttr.h"
-#include "ClosureDividerMatcher.h"
+#include "Attr.h"
+#include "Matcher.h"
 #include "Topology.h"
 
 using namespace clang;

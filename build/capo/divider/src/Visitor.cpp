@@ -6,8 +6,8 @@
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/Sema/Sema.h"
 
-#include "ClosureDividerVisitor.h"
-#include "ClosureDividerAttr.h"
+#include "Visitor.h"
+#include "Attr.h"
 #include "Topology.h"
 
 using namespace clang;

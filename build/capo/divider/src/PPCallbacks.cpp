@@ -13,8 +13,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ClosureDividerPPCallbacks.h"
-#include "ClosureDividerMatcher.h"
+#include "PPCallbacks.h"
+#include "Matcher.h"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Lex/MacroArgs.h"

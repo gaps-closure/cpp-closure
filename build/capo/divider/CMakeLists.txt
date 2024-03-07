@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13.4)
-project(closure-divider)
+project(divider)
 
 #===============================================================================
 # 0. GET CLANG INSTALLATION DIR

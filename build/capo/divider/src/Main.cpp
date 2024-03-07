@@ -8,8 +8,8 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Tooling/Refactoring.h"
 
-#include "ClosureDividerMatcher.h"
-#include "ClosureDividerPP.h"
+#include "Matcher.h"
+#include "PPFrontEnd.h"
 #include "Topology.h"
 
 using namespace llvm;

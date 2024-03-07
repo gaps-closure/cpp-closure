@@ -1,15 +1,15 @@
 set(CLOSURE_TOOLS
-    closure-divider
+    divider
 )
 
-set(closure-divider_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMain.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerVisitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerMatcher.cpp
+set(divider_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Matcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ClosureDividerPPCallbacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PPCallbacks.cpp
 )
 
 # CONFIGURE THE TOOLS
