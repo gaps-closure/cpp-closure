@@ -28,7 +28,7 @@ protected:
     std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                     StringRef InFile) override {
         Preprocessor &PP = CI.getPreprocessor();
-        PP.addPPCallbacks(std::make_unique<PPCallbacksClosure>(Filters, CallbackCalls, PP));
+        PP.addPPCallbacks(std::make_unique<PPCallbacksClosure>(Filters, PP));
 
         return std::make_unique<ASTConsumer>();
     }
@@ -42,21 +42,11 @@ protected:
     }
 
     void EndSourceFileAction() override {
-        // OS << "---\n";
-        // for (const CallbackCall &Callback : CallbackCalls) {
-        //     OS << "- Callback: " << Callback.Name << "\n";
-        //     for (const Argument &Arg : Callback.Arguments)
-        //         OS << "  " << Arg.Name << ": " << Arg.Value << "\n";
-        // }
-        // OS << "...\n";
-
-        CallbackCalls.clear();
     }
 
 private:
     const FilterType &Filters;
     raw_ostream &OS;
-    std::vector<CallbackCall> CallbackCalls;
 };
 
 class PPFrontendActionFactory : public tooling::FrontendActionFactory 

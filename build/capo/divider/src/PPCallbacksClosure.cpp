@@ -40,9 +40,8 @@ static std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc)
 }
 
 PPCallbacksClosure::PPCallbacksClosure(const FilterType &Filters,
-                                       std::vector<CallbackCall> &CallbackCalls,
                                        Preprocessor &PP)
-    : CallbackCalls(CallbackCalls), Filters(Filters), PP(PP) 
+    : Filters(Filters), PP(PP) 
 {
 }
 
@@ -50,7 +49,7 @@ PPCallbacksClosure::~PPCallbacksClosure()
 {
 }
 
-// Callback invoked when start reading any pragma directive.
+// invoked when start reading any pragma directive.
 void PPCallbacksClosure::PragmaDirective(SourceLocation Loc,
                                          PragmaIntroducerKind Introducer)
 {
