@@ -8,8 +8,8 @@
 namespace clang {
 namespace pp_divider {
 
-PPCallbacksClosure::PPCallbacksClosure(const FilterType &filters, Preprocessor &PP)
-    : filters(filters), PP(PP) 
+PPCallbacksClosure::PPCallbacksClosure(const FilterType &filters, Preprocessor &preprocessor)
+    : filters(filters), preprocessor(preprocessor) 
 {
 }
 
@@ -20,7 +20,7 @@ PPCallbacksClosure::~PPCallbacksClosure()
 // invoked when start reading any pragma directive.
 void PPCallbacksClosure::PragmaDirective(SourceLocation loc, PragmaIntroducerKind introducer)
 {
-    SourceManager &sm = PP.getSourceManager();
+    SourceManager &sm = preprocessor.getSourceManager();
     unsigned line = sm.getExpansionLineNumber(loc);
     SourceLocation line_after = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
     SourceRange range(loc, line_after);
@@ -38,8 +38,8 @@ void PPCallbacksClosure::PragmaDirective(SourceLocation loc, PragmaIntroducerKin
 // Get the raw source string of the range.
 llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange range) 
 {
-    const char *begin = PP.getSourceManager().getCharacterData(range.getBegin());
-    const char *end = PP.getSourceManager().getCharacterData(range.getEnd());
+    const char *begin = preprocessor.getSourceManager().getCharacterData(range.getBegin());
+    const char *end = preprocessor.getSourceManager().getCharacterData(range.getEnd());
 
     return llvm::StringRef(begin, end - begin);
 }

@@ -22,13 +22,14 @@ namespace {
 class PPFrontendAction : public ASTFrontendAction {
 public:
     PPFrontendAction(const FilterType &filters, raw_ostream &rostream)
-        : filters(filters), rostream(rostream) {}
+        : filters(filters), rostream(rostream) {
+    }
 
 protected:
     std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci,
                                                     StringRef inFile) override {
-        Preprocessor &PP = ci.getPreprocessor();
-        PP.addPPCallbacks(std::make_unique<PPCallbacksClosure>(filters, PP));
+        Preprocessor &preprocessor = ci.getPreprocessor();
+        preprocessor.addPPCallbacks(std::make_unique<PPCallbacksClosure>(filters, preprocessor));
 
         return std::make_unique<ASTConsumer>();
     }

@@ -15,7 +15,7 @@ using FilterType = std::vector<std::pair<llvm::GlobPattern, bool>>;
 class PPCallbacksClosure : public PPCallbacks 
 {
 public:
-    PPCallbacksClosure(const FilterType &filters, Preprocessor &PP);
+    PPCallbacksClosure(const FilterType &filters, Preprocessor &preprocessor);
     ~PPCallbacksClosure() override;
 
     // callback
@@ -26,7 +26,7 @@ public:
     // List of (Glob,Enabled) pairs used to filter callbacks.
     const FilterType &filters;
 
-    Preprocessor &PP;
+    Preprocessor &preprocessor;
 };
 
 } // namespace pp_divider
