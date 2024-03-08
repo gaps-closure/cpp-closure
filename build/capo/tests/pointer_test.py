@@ -4,6 +4,7 @@ import glob
 import subprocess
 import re
 from pathlib import Path
+from typing import Optional
 
 CLANG_14_EXECUTABLE = os.environ['CLANG_14_EXECUTABLE'] 
 OPT_14_EXECUTABLE = os.environ['OPT_14_EXECUTABLE']
@@ -154,23 +155,23 @@ def gen_intermediate_files(cpp_file_name):
 
     return file_paths
 
-def run_solver(nodes_csv, edges_csv, collated_json, test_file_name) -> subprocess.CompletedProcess[bytes]:
+def run_solver(nodes_csv, edges_csv, collated_json, test_file_name, solver_type = "mzn") -> subprocess.CompletedProcess[bytes]:
     command = (
         sys.executable,
         SOLVER_SCRIPT,
         '--max-fn-params', '10',
         '--cle-json', collated_json,
         '--temp-dir', TMP_DIR,
-        "mzn",
+        solver_type,
         nodes_csv, edges_csv
     )
     status = subprocess.run(command, stdout=subprocess.PIPE, env=dict(os.environ, **{"MODEL_MZN": MODEL_MZN}))
 
     assert status.returncode == 0 
 
-
-    instance_mzn = f'{TMP_DIR}/{test_file_name}-{INSTANCE_MZN}'
-    os.rename(Path(TMP_DIR) / INSTANCE_MZN, instance_mzn)
+    if solver_type == "mzn":
+        instance_mzn = f'{TMP_DIR}/{test_file_name}-{INSTANCE_MZN}'
+        os.rename(Path(TMP_DIR) / INSTANCE_MZN, instance_mzn)
 
     return status
 
@@ -185,12 +186,13 @@ def run_end_to_end(cpp_file_name) -> subprocess.CompletedProcess[bytes]:
     modify_edges(file_paths[EDGES_CSV], point_to_edges)  
     return run_solver(file_paths[NODES_CSV], file_paths[EDGES_CSV], file_paths[COLLATED_JSON], Path(cpp_file_name).stem)
 
-def parse_solver_output(output: str) -> list[str]:
+def parse_solver_output(output: str) -> Optional[list[str]]:
+    
     res = re.search(r'taint = \[((\w+)(,\s+)?)*\]', output)
     if res:
-        return list(res.groups()[:-1])
+        return [ s.removeprefix("taint = [").removesuffix("]") for s in res.group(0).split(", ") ]
     else:
-        return []
+        return None 
 
 def test_configuration():
     assert os.path.exists(CLANG_14_EXECUTABLE)
@@ -247,13 +249,39 @@ def test_ref_basic():
 def test_e2e_alias_basic():
     output = run_end_to_end('alias_basic.cpp')
     taints = parse_solver_output(output.stdout.decode())
-    assert len(taints) > 0
+    assert taints
     assert all((taint == "GREEN" for taint in taints))
+
+def test_e2e_class_basic():
+    output = run_end_to_end('class_basic.cpp')
+    print(output.stdout.decode())
+
+def test_e2e_xd_only():
+    output = run_end_to_end('xd_only.cpp')
+    taints = parse_solver_output(output.stdout.decode())
+    assert taints 
+
+def test_e2e_xd_with_class():
+    output = run_end_to_end('xd_with_class.cpp')
+    taints = parse_solver_output(output.stdout.decode())
+    assert taints
+    assert "ALL" in taints
+
+def test_e2e_annotated_class():
+    output = run_end_to_end('annotated_class.cpp')
+    taints = parse_solver_output(output.stdout.decode())
+    assert taints
 
 def test_e2e_simple_fail():
     output = run_end_to_end('simple_fail.cpp')
     assert output.stdout.decode().find("UNSATISFIABLE") != -1
 
+def test_e2e_coerce():
+    output = run_end_to_end('coerce.cpp')
+    print(output.stdout.decode())
+    taints = parse_solver_output(output.stdout.decode())
+    assert taints
+    assert all((taint in ["ORANGE", "ORANGE_SHAREABLE", "GET_FOO"] for taint in taints))
 
 def test_struct_pointers():
     file_paths = gen_intermediate_files('struct_pointers.cpp')

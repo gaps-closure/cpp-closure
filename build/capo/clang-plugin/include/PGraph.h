@@ -247,6 +247,7 @@ public:
     NodeID add_node(Node&& node) override;
 private:
 
+    NodeID add_var_decl(VarDecl* decl, NodeCtx ctx = NodeCtx()); 
     NodeID add_record_decl(CXXRecordDecl* decl, NodeCtx ctx = NodeCtx()); 
     NodeID add_function_decl(FunctionDecl* decl, NodeCtx ctx = NodeCtx());
     NodeID add_field_decl(FieldDecl* decl, NodeCtx ctx = NodeCtx()); 

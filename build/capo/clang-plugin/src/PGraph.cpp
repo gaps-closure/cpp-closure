@@ -436,10 +436,19 @@ NodeID pgraph::Graph::add_record_decl(CXXRecordDecl* decl, NodeCtx ctx) {
     return id;
 }
 
+NodeID pgraph::Graph::add_var_decl(VarDecl* decl, NodeCtx ctx) {
+    auto id = add_node(Node(DeclVar(decl), ctx));
+    if(auto init = decl->getInit()) {
+        auto cid = add_stmt(init, ctx);
+        add_edge(Edge(id, cid, STRUCT_CHILD));
+    }
+    return id;
+}
+
 NodeID pgraph::Graph::add_decl(Decl* decl, NodeCtx ctx) {
     switch(decl->getKind()) {
         case Decl::Var: 
-            return add_node(Node(DeclVar(dyn_cast<VarDecl>(decl)), ctx));
+            return add_var_decl(dyn_cast<VarDecl>(decl), ctx);
         case Decl::Function:
             return add_function_decl(dyn_cast<FunctionDecl>(decl), ctx);
         case Decl::CXXRecord:
@@ -652,7 +661,7 @@ pgraph::Graph::NodeTable pgraph::Graph::node_table() {
         if(function_id)
             function_id_str = std::to_string(node_id_map[*function_id]);
         if(node.param_idx)
-            param_idx_str = std::to_string(*(node.param_idx));
+            param_idx_str = std::to_string(*(node.param_idx) + 1);
         HetList<cle::NodeID, std::string, std::string, std::string, 
             std::string, std::string, std::string,
             std::string,

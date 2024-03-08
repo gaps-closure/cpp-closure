@@ -136,6 +136,8 @@ predicate isFunction(NodeIdx: n)    = (n in FunOrMethodOrCon);
 predicate isClass(NodeIdx: n)       = (n in Decl_Record);
 predicate allowOrRedact(var cdf: c) = (hasGuardOperation[c] == allow \/ hasGuardOperation[c] == redact);
 
+predicate annotFun(NodeIdx: n) = hasFunction[n] != 0 /\ userAnnotatedNode[hasFunction[n]];
+
 predicate sourceAnnotFun(EdgeIdx: e) =
     (if hasFunction[hasSource[e]] != 0 then userAnnotatedNode[hasFunction[hasSource[e]]] else false endif);
 
@@ -149,11 +151,16 @@ predicate xdedge(EdgeIdx: e) = (nodeEnclave[hasSource[e]] != nodeEnclave[hasDest
 
 predicate taintsAgree(var cleLabel: t1, var cleLabel: t2) = t1 == t2 \/ t1 == ALL \/ t2 == ALL;
 
+predicate child(NodeIdx: n, NodeIdx: c) = exists (e in Struct_Child) (hasSource[e] == n /\ hasDest[e] == c);
+predicate ancestor(NodeIdx: n, NodeIdx: c) = child(n, c) \/ exists (d in NodeIdx) (child(n, d) /\ ancestor(d, c));
+
 function var cleLabel: esTaint(EdgeIdx: e) = taint[hasSource[e]];
 function var cleLabel: edTaint(EdgeIdx: e) = taint[hasDest[e]];
 
 function var cleLabel: esFunTaint(EdgeIdx: e) = if sourceAnnotFun(e) then taint[hasFunction[hasSource[e]]] else nullCleLabel endif;
 function var cleLabel: edFunTaint(EdgeIdx: e) = if destAnnotFun(e)   then taint[hasFunction[hasDest[e]]]   else nullCleLabel endif;
+
+function var cdf: funCdf(NodeIdx: n) = if annotFun(n) then cdfForRemoteLevel[ftaint(n), hasLabelLevel[taint[n]]] else nullCdf endif;
 
 function var cdf: esFunCdf(EdgeIdx: e) = if sourceAnnotFun(e) then cdfForRemoteLevel[esFunTaint(e), hasLabelLevel[edTaint(e)]] else nullCdf endif;
 function var cdf: edFunCdf(EdgeIdx: e) = if destAnnotFun(e)   then cdfForRemoteLevel[edFunTaint(e), hasLabelLevel[esTaint(e)]] else nullCdf endif;
@@ -255,8 +262,12 @@ constraint :: "XDCallBlest"
     forall (e in Control_Invocation) (xdedge(e) -> userAnnotatedNode[hasDest[e]]);
 constraint :: "XDCallAllowed"
     forall (e in Control_Invocation) (xdedge(e) -> allowOrRedact(edFunCdf(e)));
-constraint :: "XDReturnAllowed"
-    forall (e in Control_Return) (xdedge(e) -> allowOrRedact(esFunCdf(e)));
+% constraint :: "XDReturnAllowed"
+    % forall (e in Control_Return) (xdedge(e) -> allowOrRedact(esFunCdf(e)));
+
+% caller -[Control_Invocation]-> callee <-[hasFunction]- Stmt_Return = Return Edge 
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data never leaves enclave except via parameters or return for valid XDC %
@@ -267,9 +278,30 @@ constraint :: "EnclaveSafeDataEdges"
 
 % Cross-domain returns must be allowed by the CDF, but the taints need not match
 % (can't enforce taint matching as the level must change).
-constraint :: "XDReturnDataAllowed"
-    forall (e in Data_Return)
-        (xdedge(e) -> allowOrRedact(esFunCdf(e)));
+% constraint :: "XDReturnDataAllowed"
+%     forall (e in Data_Return)
+%         (xdedge(e) -> allowOrRedact(esFunCdf(e)));
+
+% All children of returns must have the same taint as the return stmt 
+constraint :: "ReturnChildMatchesReturn"
+    forall (n in Stmt_Return) (
+        forall (c in NodeIdx) (ancestor(n, c) -> taint[n] == taint[c])
+    );
+
+% Return statments in annotated functions must have a taint
+% which is one of the rettaints 
+constraint :: "ReturnStmtMatchesRettaint"
+    forall (n in Stmt_Return where annotFun(n)) (
+        hasRettaints[funCdf(n), taint[n]]
+    );
+
+% For any function called cross-domain, all its returns 
+% must have taints shareable with the callee level
+constraint :: "XDReturnAllowed"
+    forall (e in Control_Invocation where xdedge(e)) (
+        forall (r in Stmt_Return where hasFunction[r] == hasDest[e]) 
+            (allowOrRedact(cdfForRemoteLevel[taint[r], hasLabelLevel[esTaint(e)]]))
+    );
 
 % Cross-domain Points-To edges must be allowed by the CDF, but the taints need not match.
 % Note: The reason cross domain points-to edges are not disallowed completely
@@ -315,12 +347,34 @@ constraint :: "externDataEdgeTaintsMatch"
 %   -If the callee (source) function is un-annotated, the taints must match
 %   -If the callee (source) function is annotated, the taint on the dest node
 %    must be in the callee's rettaints
-constraint :: "retEdgeFromUnannotatedTaintsMatch"
-    forall (e in Data_Return where not sourceAnnotFun(e))
+
+% constraint :: "retEdgeFromUnannotatedTaintsMatch"
+%     forall (e in Data_Return where not sourceAnnotFun(e))
+%         (taintsAgree(esTaint(e), edTaint(e)));
+% constraint :: "returnNodeInRettaints"
+%     forall (e in Data_Return where sourceAnnotFun(e) /\ not xdedge(e))
+%         (hasRettaints[esFunCdf(e), edTaint(e)]);
+
+
+% The taint of the returned value of a call to an unannotated function must match the taint 
+% of the unannotated function
+constraint :: "returnFromUnannotatedTaintsMatch"
+    forall (e in Control_Invocation where not destAnnotFun(e))
         (taintsAgree(esTaint(e), edTaint(e)));
-constraint :: "returnNodeInRettaints"
-    forall (e in Data_Return where sourceAnnotFun(e) /\ not xdedge(e))
-        (hasRettaints[esFunCdf(e), edTaint(e)]);
+
+% The taint of the returned value of a (not xd) call to an annotated function
+% must match one of the rettaints
+constraint :: "returnInRettaints"
+    forall (e in Control_Invocation where destAnnotFun(e) /\ not xdedge(e))
+        (hasRettaints[edFunCdf(e), esTaint(e)]);
+
+% The taint of the returned value of a (not xd) call to an annotated function
+% must match the taints of all of the callee's returns 
+constraint :: "callsiteTaintMatchesAllReturns"
+    forall (e in Control_Invocation where destAnnotFun(e) /\ not xdedge(e))
+        (forall (r in Stmt_Return where hasFunction[r] == hasDest[e])
+            (taintsAgree(taint[r], esTaint(e))));
+
 
 % ArgPass edges: The callsite node (Stmt_Call) has ArgPass edges to each of its arguments, and call invocation edges
 % to each potential callee. The ParamIdx is on the argpass edge destination and the Decl_Param (unused).
@@ -335,6 +389,14 @@ constraint :: "argumentInArgtaints"
     forall (e in Control_Invocation where destAnnotFun(e) /\ not xdedge(e))
         (forall (arg_e in Data_ArgPass where hasSource[arg_e] == hasSource[e])
             (hasArgtaints[edFunCdf(e), hasParamIdx[hasDest[arg_e]], taint[hasDest[arg_e]]]));
+
+% All children of anything passed as an argument must have
+% the same taint as the argument node  
+constraint :: "argumentChildren"
+    forall (e in Data_ArgPass) (
+        forall(n in NodeIdx where ancestor(hasDest[e], n)) 
+            (taint[n] == edTaint(e))
+    );
 
 % Inter-function points-to edges should always have the same taint
 predicate interFunEdge(DataEdge: e) =
