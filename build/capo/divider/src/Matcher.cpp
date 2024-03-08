@@ -214,6 +214,8 @@ bool Matcher::matchVarDecl(const clang::SourceManager &sm, const VarDecl *var)
 
     SourceRange range = var->getSourceRange();
 
+    // showLoc("VarDecl......", sm, var);
+
     int idx = isEnclosedInCle(range);
     if (idx >= 0) {
         ClePair clePair = cleRange[idx];
@@ -222,8 +224,6 @@ bool Matcher::matchVarDecl(const clang::SourceManager &sm, const VarDecl *var)
     }
 
     replace(sm, range);
-
-    // showLoc("VarDecl......", sm, var);
 
     SourceLocation loc = findSemiAfterLocation(var->getEndLoc(), *ctx, true);
     rewriter.ReplaceText (loc, 1, " ");
@@ -415,15 +415,44 @@ void Matcher::showLoc(string msg, const clang::SourceManager &sm, const Expr *ex
     //     std::cout << attr->getAnnotation().str() << std::endl;    
 }
 
+// Get a "file:line:column" source location string.
+static std::string getSourceLocationString(const clang::SourceManager &sm, SourceLocation loc, bool filename) 
+{
+    if (loc.isInvalid())
+        return std::string("(none)");
+
+    if (loc.isFileID()) {
+        PresumedLoc PLoc = sm.getPresumedLoc(loc);
+
+        if (PLoc.isInvalid()) {
+            return std::string("(invalid)");
+        }
+
+        std::string Str;
+        llvm::raw_string_ostream SS(Str);
+
+        // The macro expansion and spelling pos is identical for file locs.
+        SS << (filename ? PLoc.getFilename() : "") << (filename ? ":" : "")
+           << PLoc.getLine() << ':'
+           << PLoc.getColumn();
+
+        std::string result = SS.str();
+        // YAML treats backslash as escape, so use forward slashes.
+        std::replace(result.begin(), result.end(), '\\', '/');
+
+        return result;
+    }
+    return std::string("(nonfile)");
+}
+
 void Matcher::showLoc(string msg, const clang::SourceManager &sm, 
     SourceLocation begin, SourceLocation end)
 {
     llvm::outs() << msg 
-                << sm.getFilename(begin) << ":"
-                << sm.getSpellingLineNumber(begin) << ":"
-                << sm.getSpellingColumnNumber(begin) << "-"
-                << sm.getSpellingLineNumber(end) << ":"
-                << sm.getSpellingColumnNumber(end) << "\n";
+                 << getSourceLocationString(sm, begin, true)
+                 << "-"
+                 << getSourceLocationString(sm, end, false)
+                 << "\n";
 }
 
 static ParsedAttrInfoRegistry::Add<AttrInfo> Y("cle", "cle annotator");

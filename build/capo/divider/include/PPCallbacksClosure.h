@@ -1,16 +1,11 @@
 #ifndef PP_CALLBACKS_CLOSURE_H
 #define PP_CALLBACKS_CLOSURE_H
 
+#include <vector>
+
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
-#include "clang/Basic/SourceManager.h"
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/SmallSet.h"
-#include "llvm/ADT/StringMap.h"
-#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/GlobPattern.h"
-#include <string>
-#include <vector>
 
 namespace clang {
 namespace pp_divider {
