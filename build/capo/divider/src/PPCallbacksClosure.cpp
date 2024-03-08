@@ -9,13 +9,13 @@ namespace clang {
 namespace pp_divider {
 
 // Get a "file:line:column" source location string.
-std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc) 
+std::string getSourceLocationString(Preprocessor &PP, SourceLocation loc) 
 {
-    if (Loc.isInvalid())
+    if (loc.isInvalid())
         return std::string("(none)");
 
-    if (Loc.isFileID()) {
-        PresumedLoc PLoc = PP.getSourceManager().getPresumedLoc(Loc);
+    if (loc.isFileID()) {
+        PresumedLoc PLoc = PP.getSourceManager().getPresumedLoc(loc);
 
         if (PLoc.isInvalid()) {
             return std::string("(invalid)");
@@ -39,8 +39,7 @@ std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc)
     return std::string("(nonfile)");
 }
 
-PPCallbacksClosure::PPCallbacksClosure(const FilterType &filters,
-                                       Preprocessor &PP)
+PPCallbacksClosure::PPCallbacksClosure(const FilterType &filters, Preprocessor &PP)
     : filters(filters), PP(PP) 
 {
 }
@@ -50,13 +49,12 @@ PPCallbacksClosure::~PPCallbacksClosure()
 }
 
 // invoked when start reading any pragma directive.
-void PPCallbacksClosure::PragmaDirective(SourceLocation Loc,
-                                         PragmaIntroducerKind Introducer)
+void PPCallbacksClosure::PragmaDirective(SourceLocation loc, PragmaIntroducerKind introducer)
 {
     SourceManager &sm = PP.getSourceManager();
-    unsigned line = sm.getExpansionLineNumber(Loc);
+    unsigned line = sm.getExpansionLineNumber(loc);
     SourceLocation line_after = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
-    SourceRange range(Loc, line_after);
+    SourceRange range(loc, line_after);
     CharSourceRange csr(range, false);
 
     std::string pragma = getSourceString(csr).str();
@@ -71,10 +69,10 @@ void PPCallbacksClosure::PragmaDirective(SourceLocation Loc,
 // Get the raw source string of the range.
 llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange range) 
 {
-    const char *B = PP.getSourceManager().getCharacterData(range.getBegin());
-    const char *E = PP.getSourceManager().getCharacterData(range.getEnd());
+    const char *begin = PP.getSourceManager().getCharacterData(range.getBegin());
+    const char *end = PP.getSourceManager().getCharacterData(range.getEnd());
 
-    return llvm::StringRef(B, E - B);
+    return llvm::StringRef(begin, end - begin);
 }
 
 } // namespace pp_divider

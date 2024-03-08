@@ -126,12 +126,12 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
     }
 
     using namespace clang::pp_divider;
-    FilterType Filters;
+    FilterType filters;
     StringRef Pattern("PragmaDirective");  // = Pattern.trim();
     bool Enabled = !Pattern.consume_front("-");
     Expected<GlobPattern> Pat = GlobPattern::create(Pattern);
     if (Pat)
-        Filters.emplace_back(std::move(*Pat), Enabled);
+        filters.emplace_back(std::move(*Pat), Enabled);
     else
         error(toString(Pat.takeError()));
 
@@ -168,7 +168,7 @@ void divide(clang::tooling::CompilationDatabase &database, string topologyJson)
 
             // run the preprocessor callback to get the #pragma begin/end pair
             clang::tooling::ClangTool Toolx(database, cxxfile);
-            PPFrontendActionFactory Factory(Filters, Out.os());
+            PPFrontendActionFactory Factory(filters, Out.os());
             Toolx.run(&Factory);
            
             clang::tooling::RefactoringTool Tool(database, cxxfile);

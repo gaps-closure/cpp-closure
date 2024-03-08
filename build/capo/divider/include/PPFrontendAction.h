@@ -21,13 +21,13 @@ namespace {
 
 class PPFrontendAction : public ASTFrontendAction {
 public:
-    PPFrontendAction(const FilterType &filters, raw_ostream &OS)
-        : filters(filters), OS(OS) {}
+    PPFrontendAction(const FilterType &filters, raw_ostream &rostream)
+        : filters(filters), rostream(rostream) {}
 
 protected:
-    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                    StringRef InFile) override {
-        Preprocessor &PP = CI.getPreprocessor();
+    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci,
+                                                    StringRef inFile) override {
+        Preprocessor &PP = ci.getPreprocessor();
         PP.addPPCallbacks(std::make_unique<PPCallbacksClosure>(filters, PP));
 
         return std::make_unique<ASTConsumer>();
@@ -42,22 +42,22 @@ protected:
 
 private:
     const FilterType &filters;
-    raw_ostream &OS;
+    raw_ostream &rostream;
 };
 
 class PPFrontendActionFactory : public tooling::FrontendActionFactory 
 {
 public:
-    PPFrontendActionFactory(const FilterType &filters, raw_ostream &OS)
-        : filters(filters), OS(OS) {}
+    PPFrontendActionFactory(const FilterType &filters, raw_ostream &rostream)
+        : filters(filters), rostream(rostream) {}
 
     std::unique_ptr<FrontendAction> create() override {
-        return std::make_unique<PPFrontendAction>(filters, OS);
+        return std::make_unique<PPFrontendAction>(filters, rostream);
     }
 
 private:
     const FilterType &filters;
-    raw_ostream &OS;
+    raw_ostream &rostream;
 };
 } // namespace
 } // namespace pp_divider

@@ -24,9 +24,9 @@ public:
     ~PPCallbacksClosure() override;
 
     // callback
-    void PragmaDirective(SourceLocation Loc, PragmaIntroducerKind Introducer) override;
+    void PragmaDirective(SourceLocation loc, PragmaIntroducerKind introducer) override;
 
-    llvm::StringRef getSourceString(CharSourceRange Range);
+    llvm::StringRef getSourceString(CharSourceRange range);
 
     // List of (Glob,Enabled) pairs used to filter callbacks.
     const FilterType &filters;
