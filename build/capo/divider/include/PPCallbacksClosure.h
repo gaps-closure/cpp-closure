@@ -48,31 +48,6 @@ public:
 
     // Helper functions.
 
-    /// Start a new callback.
-    void beginCallback(const char *Name);
-
-    void append(const char *Str);
-    void appendArgument(const char *Name, bool Value);
-    void appendArgument(const char *Name, int Value);
-    void appendArgument(const char *Name, const char *Value);
-    void appendArgument(const char *Name, llvm::StringRef Value);
-    void appendArgument(const char *Name, const std::string &Value);
-    void appendArgument(const char *Name, const Token &Value);
-    void appendArgument(const char *Name, int Value, const char *const Strings[]);
-    void appendArgument(const char *Name, FileID Value);
-    void appendArgument(const char *Name, const FileEntry *Value);
-    void appendArgument(const char *Name, SourceLocation Value);
-    void appendArgument(const char *Name, SourceRange Value);
-    void appendArgument(const char *Name, CharSourceRange Value);
-    void appendArgument(const char *Name, ModuleIdPath Value);
-    void appendArgument(const char *Name, const IdentifierInfo *Value);
-    void appendArgument(const char *Name, const MacroDirective *Value);
-    void appendArgument(const char *Name, const MacroDefinition &Value);
-    void appendArgument(const char *Name, const MacroArgs *Value);
-    void appendArgument(const char *Name, const Module *Value);
-    void appendQuotedArgument(const char *Name, const std::string &Value);
-    void appendFilePathArgument(const char *Name, llvm::StringRef Value);
-
     /// Get the raw source string of the range.
     llvm::StringRef getSourceString(CharSourceRange Range);
 
