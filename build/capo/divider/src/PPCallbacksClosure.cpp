@@ -9,7 +9,7 @@ namespace clang {
 namespace pp_divider {
 
 // Get a "file:line:column" source location string.
-static std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc) 
+std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc) 
 {
     if (Loc.isInvalid())
         return std::string("(none)");
@@ -39,9 +39,9 @@ static std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc)
     return std::string("(nonfile)");
 }
 
-PPCallbacksClosure::PPCallbacksClosure(const FilterType &Filters,
+PPCallbacksClosure::PPCallbacksClosure(const FilterType &filters,
                                        Preprocessor &PP)
-    : Filters(Filters), PP(PP) 
+    : filters(filters), PP(PP) 
 {
 }
 

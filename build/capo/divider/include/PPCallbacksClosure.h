@@ -20,7 +20,7 @@ using FilterType = std::vector<std::pair<llvm::GlobPattern, bool>>;
 class PPCallbacksClosure : public PPCallbacks 
 {
 public:
-    PPCallbacksClosure(const FilterType &Filters, Preprocessor &PP);
+    PPCallbacksClosure(const FilterType &filters, Preprocessor &PP);
     ~PPCallbacksClosure() override;
 
     // callback
@@ -29,7 +29,7 @@ public:
     llvm::StringRef getSourceString(CharSourceRange Range);
 
     // List of (Glob,Enabled) pairs used to filter callbacks.
-    const FilterType &Filters;
+    const FilterType &filters;
 
     Preprocessor &PP;
 };
