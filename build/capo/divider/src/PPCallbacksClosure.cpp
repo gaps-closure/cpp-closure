@@ -1,111 +1,86 @@
-//===--- PPCallbacksClosure.cpp - Preprocessor tracker -*--*---------------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-///
-/// \file
-/// Implementations for preprocessor tracking.
-///
-/// See the header for details.
-///
-//===----------------------------------------------------------------------===//
-
-#include "PPCallbacksClosure.h"
-#include "Matcher.h"
-
 #include "clang/Basic/FileManager.h"
 #include "clang/Lex/MacroArgs.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include "PPCallbacksClosure.h"
+#include "Matcher.h"
 
 namespace clang {
 namespace pp_divider {
 
 // Get a "file:line:column" source location string.
-static std::string getSourceLocationString(Preprocessor &PP,
-                                           SourceLocation Loc) {
-  if (Loc.isInvalid())
-    return std::string("(none)");
+static std::string getSourceLocationString(Preprocessor &PP, SourceLocation Loc) 
+{
+    if (Loc.isInvalid())
+        return std::string("(none)");
 
-  if (Loc.isFileID()) {
-    PresumedLoc PLoc = PP.getSourceManager().getPresumedLoc(Loc);
+    if (Loc.isFileID()) {
+        PresumedLoc PLoc = PP.getSourceManager().getPresumedLoc(Loc);
 
-    if (PLoc.isInvalid()) {
-      return std::string("(invalid)");
+        if (PLoc.isInvalid()) {
+            return std::string("(invalid)");
+        }
+
+        std::string Str;
+        llvm::raw_string_ostream SS(Str);
+
+        // The macro expansion and spelling pos is identical for file locs.
+        SS << "\"" 
+           << PLoc.getFilename() << ':' 
+           << PLoc.getLine() << ':'
+           << PLoc.getColumn() << "\"";
+
+        std::string result = SS.str();
+        // YAML treats backslash as escape, so use forward slashes.
+        std::replace(result.begin(), result.end(), '\\', '/');
+
+        return result;
     }
-
-    std::string Str;
-    llvm::raw_string_ostream SS(Str);
-
-    // The macro expansion and spelling pos is identical for file locs.
-    SS << "\"" << PLoc.getFilename() << ':' << PLoc.getLine() << ':'
-       << PLoc.getColumn() << "\"";
-
-    std::string Result = SS.str();
-
-    // YAML treats backslash as escape, so use forward slashes.
-    std::replace(Result.begin(), Result.end(), '\\', '/');
-
-    return Result;
-  }
-
-  return std::string("(nonfile)");
+    return std::string("(nonfile)");
 }
 
-// Enum string tables.
-
-// FileChangeReason strings.
 static const char *const FileChangeReasonStrings[] = {
-  "EnterFile", "ExitFile", "SystemHeaderPragma", "RenameFile"
+    "EnterFile", "ExitFile", "SystemHeaderPragma", "RenameFile"
 };
 
-// CharacteristicKind strings.
-static const char *const CharacteristicKindStrings[] = { "C_User", "C_System",
-                                                         "C_ExternCSystem" };
+static const char *const CharacteristicKindStrings[] = { 
+    "C_User", "C_System", "C_ExternCSystem" 
+};
 
-// MacroDirective::Kind strings.
 static const char *const MacroDirectiveKindStrings[] = {
-  "MD_Define","MD_Undefine", "MD_Visibility"
+    "MD_Define","MD_Undefine", "MD_Visibility"
 };
 
-// PragmaIntroducerKind strings.
-static const char *const PragmaIntroducerKindStrings[] = { "PIK_HashPragma",
-                                                           "PIK__Pragma",
-                                                           "PIK___pragma" };
+static const char *const PragmaIntroducerKindStrings[] = {
+    "PIK_HashPragma", "PIK__Pragma", "PIK___pragma" };
 
-// PragmaMessageKind strings.
 static const char *const PragmaMessageKindStrings[] = {
-  "PMK_Message", "PMK_Warning", "PMK_Error"
+    "PMK_Message", "PMK_Warning", "PMK_Error"
 };
 
-// PragmaWarningSpecifier strings.
 static const char *const PragmaWarningSpecifierStrings[] = {
     "PWS_Default", "PWS_Disable", "PWS_Error",  "PWS_Once",   "PWS_Suppress",
     "PWS_Level1",  "PWS_Level2",  "PWS_Level3", "PWS_Level4",
 };
 
-// ConditionValueKind strings.
 static const char *const ConditionValueKindStrings[] = {
-  "CVK_NotEvaluated", "CVK_False", "CVK_True"
+    "CVK_NotEvaluated", "CVK_False", "CVK_True"
 };
 
-// Mapping strings.
-static const char *const MappingStrings[] = { "0",          "MAP_IGNORE",
-                                              "MAP_REMARK", "MAP_WARNING",
-                                              "MAP_ERROR",  "MAP_FATAL" };
-
-// PPCallbacksClosure functions.
+static const char *const MappingStrings[] = { 
+    "0", "MAP_IGNORE", "MAP_REMARK", "MAP_WARNING", "MAP_ERROR",  "MAP_FATAL" 
+};
 
 PPCallbacksClosure::PPCallbacksClosure(const FilterType &Filters,
                                        std::vector<CallbackCall> &CallbackCalls,
                                        Preprocessor &PP)
-    : CallbackCalls(CallbackCalls), Filters(Filters), PP(PP) {}
+    : CallbackCalls(CallbackCalls), Filters(Filters), PP(PP) 
+{
+}
 
-PPCallbacksClosure::~PPCallbacksClosure() {}
-
-// Callback functions.
+PPCallbacksClosure::~PPCallbacksClosure()
+{
+}
 
 // Callback invoked whenever a source file is entered or exited.
 void PPCallbacksClosure::FileChanged(SourceLocation Loc,
@@ -183,28 +158,23 @@ void PPCallbacksClosure::Ident(SourceLocation Loc, llvm::StringRef Str) {
 
 // Callback invoked when start reading any pragma directive.
 void PPCallbacksClosure::PragmaDirective(SourceLocation Loc,
-                                         PragmaIntroducerKind Introducer) {
-  beginCallback("PragmaDirective");
-  appendArgument("Loc", Loc);
-  appendArgument("Introducer", Introducer, PragmaIntroducerKindStrings);
+                                         PragmaIntroducerKind Introducer)
+{
+    beginCallback("PragmaDirective");
 
-  SourceManager &sm = PP.getSourceManager();
-  unsigned line = sm.getExpansionLineNumber(Loc);
-  SourceLocation x = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);   // the line before
-  SourceRange range(Loc, x);
-  CharSourceRange csr(range, false);
+    SourceManager &sm = PP.getSourceManager();
+    unsigned line = sm.getExpansionLineNumber(Loc);
+    SourceLocation line_after = sm.translateLineCol(sm.getMainFileID(), line + 1, 1);
+    SourceRange range(Loc, line_after);
+    CharSourceRange csr(range, false);
 
-  std::string pragma = getSourceString(csr).str();
+    std::string pragma = getSourceString(csr).str();
     if (pragma.rfind("#pragma cle begin ", 0) == 0) {
-        appendArgument("PRAGMA", "BEGIN");
-
         Matcher::addCleRangeOpen(range, pragma);
     }
     else if (pragma.rfind("#pragma cle end ", 0) == 0) {
-        appendArgument("PRAGMA", "END");
         Matcher::addCleRangeClose(range, pragma);
     }
-  appendArgument("XXX", pragma);
 }
 
 // Callback invoked when a #pragma comment directive is read.
@@ -443,18 +413,19 @@ void PPCallbacksClosure::Endif(SourceLocation Loc, SourceLocation IfLoc) {
 // Helper functions.
 
 // Start a new callback.
-void PPCallbacksClosure::beginCallback(const char *Name) {
-  auto R = CallbackIsEnabled.try_emplace(Name, false);
-  if (R.second) {
-    llvm::StringRef N(Name);
-    for (const std::pair<llvm::GlobPattern, bool> &Filter : Filters)
-      if (Filter.first.match(N))
-        R.first->second = Filter.second;
-  }
-  DisableTrace = !R.first->second;
-  if (DisableTrace)
-    return;
-  CallbackCalls.push_back(CallbackCall(Name));
+void PPCallbacksClosure::beginCallback(const char *Name) 
+{
+    auto R = CallbackIsEnabled.try_emplace(Name, false);
+    if (R.second) {
+        llvm::StringRef N(Name);
+        for (const std::pair<llvm::GlobPattern, bool> &Filter : Filters)
+            if (Filter.first.match(N))
+                R.first->second = Filter.second;
+    }
+    DisableTrace = !R.first->second;
+    if (DisableTrace)
+        return;
+    CallbackCalls.push_back(CallbackCall(Name));
 }
 
 // Append a bool argument to the top trace item.
