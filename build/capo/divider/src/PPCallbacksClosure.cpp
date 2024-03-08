@@ -652,10 +652,12 @@ void PPCallbacksClosure::appendFilePathArgument(const char *Name,
 }
 
 // Get the raw source string of the range.
-llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange Range) {
-  const char *B = PP.getSourceManager().getCharacterData(Range.getBegin());
-  const char *E = PP.getSourceManager().getCharacterData(Range.getEnd());
-  return llvm::StringRef(B, E - B);
+llvm::StringRef PPCallbacksClosure::getSourceString(CharSourceRange Range) 
+{
+    const char *B = PP.getSourceManager().getCharacterData(Range.getBegin());
+    const char *E = PP.getSourceManager().getCharacterData(Range.getEnd());
+    
+    return llvm::StringRef(B, E - B);
 }
 
 } // namespace pp_divider
