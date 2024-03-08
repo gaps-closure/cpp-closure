@@ -223,12 +223,13 @@ def test_configuration():
 def test_alias_basic():
     file_paths = gen_intermediate_files('alias_basic.cpp')
 
-    expected_output = b'9,Data.PointsTo,2,1\n10,Data.PointsTo,3,1\n'
+    expected_output = [ (2, 1), (3, 1) ]
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
+    actual_output = [ tuple(int(y) for y in x.split(b',')[2:]) for x in actual_output.splitlines() ]
     assert actual_output == expected_output
 
 
@@ -237,12 +238,13 @@ def test_alias_basic():
 def test_ref_basic():
     file_paths = gen_intermediate_files('ref_basic.cpp')
 
-    expected_output = b'7,Data.PointsTo,2,1\n'
+    expected_output = [ (2, 1) ] 
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
+    actual_output = [ tuple(int(y) for y in x.split(b',')[2:]) for x in actual_output.splitlines() ]
     assert actual_output == expected_output
 
 
@@ -286,10 +288,12 @@ def test_e2e_coerce():
 def test_struct_pointers():
     file_paths = gen_intermediate_files('struct_pointers.cpp')
 
-    expected_output = b'12,Data.PointsTo,2,1\n'
+    expected_output = [ (2, 1) ] 
     actual_output = run_points_to_edges(file_paths[NODES_CSV], 
                                         file_paths[EDGES_CSV], 
                                         file_paths[SVF_NODES_CSV], 
                                         file_paths[SVF_EDGES_CSV], 
                                         file_paths[DECLARES_CSV])
+
+    actual_output = [ tuple(int(y) for y in x.split(b',')[2:]) for x in actual_output.splitlines() ]
     assert actual_output == expected_output

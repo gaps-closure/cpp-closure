@@ -79,7 +79,8 @@ class PGraph:
         self.edges = edges
         self.source_tree = defaultdict(lambda: IntervalTree())
         for node in self.nodes:
-            node.add_to_tree(self.source_tree)
+            if node.node_type.startswith('Decl'):
+                node.add_to_tree(self.source_tree)
 
 
 def pnodes(filename: Path) -> Generator[PNode, None, None]:
