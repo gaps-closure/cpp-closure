@@ -8,8 +8,11 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Tooling/Refactoring.h"
 
+#include "llvm/Support/WithColor.h"
+#include "llvm/Support/ToolOutputFile.h"
+
 #include "Matcher.h"
-#include "PPFrontEnd.h"
+#include "PPFrontendAction.h"
 #include "Topology.h"
 
 using namespace llvm;

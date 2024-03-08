@@ -9,7 +9,7 @@ set(divider_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Annotation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Enclave.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/PPCallbacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PPCallbacksClosure.cpp
 )
 
 # CONFIGURE THE TOOLS

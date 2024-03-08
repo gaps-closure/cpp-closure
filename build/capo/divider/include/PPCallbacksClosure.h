@@ -1,5 +1,5 @@
-#ifndef PP_CALLBACKS_H
-#define PP_CALLBACKS_H
+#ifndef PP_CALLBACKS_CLOSURE_H
+#define PP_CALLBACKS_CLOSURE_H
 
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
@@ -17,19 +17,18 @@ namespace pp_divider {
 
 // This struct represents one callback function argument by name and value.
 struct Argument {
-  std::string Name;
-  std::string Value;
+    std::string Name;
+    std::string Value;
 };
 
-/// This class represents one callback call by name and an array
-///   of arguments.
+/// This class represents one callback call by name and an array of arguments.
 class CallbackCall {
 public:
-  CallbackCall(llvm::StringRef Name) : Name(Name) {}
-  CallbackCall() = default;
+    CallbackCall(llvm::StringRef Name) : Name(Name) {}
+    CallbackCall() = default;
 
-  std::string Name;
-  std::vector<Argument> Arguments;
+    std::string Name;
+    std::vector<Argument> Arguments;
 };
 
 using FilterType = std::vector<std::pair<llvm::GlobPattern, bool>>;

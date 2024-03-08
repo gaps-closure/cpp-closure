@@ -1,30 +1,16 @@
 #ifndef PP_FRONTEND_H
 #define PP_FRONTEND_H
 
-#include "PPCallbacks.h"
+#include <string>
+#include <vector>
+
+#include "PPCallbacksClosure.h"
 #include "clang/AST/ASTConsumer.h"
-#include "clang/AST/ASTContext.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Driver/Options.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Lex/Preprocessor.h"
-#include "clang/Tooling/Execution.h"
-#include "clang/Tooling/Tooling.h"
-#include "llvm/Option/Arg.h"
-#include "llvm/Option/ArgList.h"
-#include "llvm/Option/OptTable.h"
-#include "llvm/Option/Option.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/GlobPattern.h"
-#include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/Path.h"
-#include "llvm/Support/ToolOutputFile.h"
-#include "llvm/Support/WithColor.h"
-#include <string>
-#include <vector>
 
 using namespace llvm;
 

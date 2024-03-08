@@ -13,7 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "PPCallbacks.h"
+#include "PPCallbacksClosure.h"
 #include "Matcher.h"
 
 #include "clang/Basic/FileManager.h"
