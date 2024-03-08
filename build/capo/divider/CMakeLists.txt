@@ -5,10 +5,10 @@ project(divider)
 # 0. GET CLANG INSTALLATION DIR
 #===============================================================================
 
-# cmake -DCT_Clang_INSTALL_DIR=/lib/llvm-16 ..
+# cmake -DCT_Clang_INSTALL_DIR=/lib/llvm-14..
 
 if(NOT DEFINED CT_Clang_INSTALL_DIR)
-    set(CT_Clang_INSTALL_DIR "/lib/llvm-16")
+    set(CT_Clang_INSTALL_DIR "/lib/llvm-14")
 endif()
 
 #===============================================================================
@@ -37,8 +37,8 @@ find_package(Clang REQUIRED CONFIG)
 # Sanity check. As Clang does not expose e.g. `CLANG_VERSION_MAJOR` through
 # AddClang.cmake, we have to use LLVM_VERSION_MAJOR instead.
 # TODO: Revisit when next version is released.
-if("${LLVM_VERSION_MAJOR}" VERSION_LESS 16)
-  message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 16 or above")
+if("${LLVM_VERSION_MAJOR}" VERSION_LESS 14)
+  message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 14 or above")
 endif()
 
 message(STATUS "Found Clang ${LLVM_PACKAGE_VERSION}")
@@ -92,7 +92,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 # Doing this at the end so that all definitions and link/include paths are
 # available for the sub-projects.
 #===============================================================================
-add_subdirectory(test)
+# add_subdirectory(test)
 # add_subdirectory(lib)
 add_subdirectory(src)
 # add_subdirectory(HelloWorld)
