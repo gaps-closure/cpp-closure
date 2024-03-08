@@ -44,67 +44,7 @@ public:
     ~PPCallbacksClosure() override;
 
     // Overridden callback functions.
-
-    void FileChanged(SourceLocation Loc, PPCallbacks::FileChangeReason Reason,
-                    SrcMgr::CharacteristicKind FileType,
-                    FileID PrevFID = FileID()) override;
-    void FileSkipped(const FileEntryRef &SkippedFile, const Token &FilenameTok,
-                    SrcMgr::CharacteristicKind FileType) override;
-    bool FileNotFound(llvm::StringRef FileName,
-                        llvm::SmallVectorImpl<char> &RecoveryPath);// override;
-    void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
-                            llvm::StringRef FileName, bool IsAngled,
-                            CharSourceRange FilenameRange, const FileEntry *File,
-                            llvm::StringRef SearchPath,
-                            llvm::StringRef RelativePath, const Module *Imported,
-                            SrcMgr::CharacteristicKind FileType); // override;
-    void moduleImport(SourceLocation ImportLoc, ModuleIdPath Path,
-                        const Module *Imported) override;
-    void EndOfMainFile() override;
-    void Ident(SourceLocation Loc, llvm::StringRef str) override;
-    void PragmaDirective(SourceLocation Loc,
-                        PragmaIntroducerKind Introducer) override;
-    void PragmaComment(SourceLocation Loc, const IdentifierInfo *Kind,
-                        llvm::StringRef Str) override;
-    void PragmaDetectMismatch(SourceLocation Loc, llvm::StringRef Name,
-                                llvm::StringRef Value) override;
-    void PragmaDebug(SourceLocation Loc, llvm::StringRef DebugType) override;
-    void PragmaMessage(SourceLocation Loc, llvm::StringRef Namespace,
-                        PPCallbacks::PragmaMessageKind Kind,
-                        llvm::StringRef Str) override;
-    void PragmaDiagnosticPush(SourceLocation Loc,
-                                llvm::StringRef Namespace) override;
-    void PragmaDiagnosticPop(SourceLocation Loc,
-                            llvm::StringRef Namespace) override;
-    void PragmaDiagnostic(SourceLocation Loc, llvm::StringRef Namespace,
-                            diag::Severity mapping, llvm::StringRef Str) override;
-    void PragmaOpenCLExtension(SourceLocation NameLoc, const IdentifierInfo *Name,
-                                SourceLocation StateLoc, unsigned State) override;
-    void PragmaWarning(SourceLocation Loc, PragmaWarningSpecifier WarningSpec,
-                        llvm::ArrayRef<int> Ids) override;
-    void PragmaWarningPush(SourceLocation Loc, int Level) override;
-    void PragmaWarningPop(SourceLocation Loc) override;
-    void PragmaExecCharsetPush(SourceLocation Loc, StringRef Str) override;
-    void PragmaExecCharsetPop(SourceLocation Loc) override;
-    void MacroExpands(const Token &MacroNameTok, const MacroDefinition &MD,
-                        SourceRange Range, const MacroArgs *Args) override;
-    void MacroDefined(const Token &MacroNameTok,
-                        const MacroDirective *MD) override;
-    void MacroUndefined(const Token &MacroNameTok, const MacroDefinition &MD,
-                        const MacroDirective *Undef) override;
-    void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
-                SourceRange Range) override;
-    void SourceRangeSkipped(SourceRange Range, SourceLocation EndifLoc) override;
-    void If(SourceLocation Loc, SourceRange ConditionRange,
-            ConditionValueKind ConditionValue) override;
-    void Elif(SourceLocation Loc, SourceRange ConditionRange,
-                ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
-    void Ifdef(SourceLocation Loc, const Token &MacroNameTok,
-                const MacroDefinition &MD) override;
-    void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
-                const MacroDefinition &MD) override;
-    void Else(SourceLocation Loc, SourceLocation IfLoc) override;
-    void Endif(SourceLocation Loc, SourceLocation IfLoc) override;
+    void PragmaDirective(SourceLocation Loc, PragmaIntroducerKind Introducer) override;
 
     // Helper functions.
 
