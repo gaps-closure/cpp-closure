@@ -27,7 +27,7 @@ EXTRA=""\
 "--extra-arg=-DMG_ENABLE_MBEDTLS=1 "\
 "--extra-arg=-DMG_ENABLE_MD5=1 "\
 "--extra-arg=-DMG_ENABLE_LINES=1 "\
-"--extra-arg=-DORION_COMM_=1 "\
+"--extra-arg=-DORION_COMM_=1 "
 
 bin/divider $EXTRA ../test/websrv/topology.json --
 ```
