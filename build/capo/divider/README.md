@@ -14,7 +14,8 @@ cmake --build build
 
 ## Invocation 
 
-Use the --extra-arg to add compiler flags. The following is a command used to divide the websrv example, assuming mbedtls is installed in system include directories, for example, /usr/include.
+Use the --extra-arg to add compiler flags. The following is a command used to divide the websrv example.
+The command assumes mbedtls and other 3rd party libraries are installed in system include directories, for example, /usr/include. If that is not the case, add more appropriate --extra-arg options to the value of EXTRA.
 
 ```bash
 
