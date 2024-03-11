@@ -148,8 +148,9 @@ bool Matcher::matchFunctionDecl(const clang::SourceManager &sm, const FunctionDe
     // showLoc("FunctionDecl......", sm, func);
 
     const FunctionDecl* def = NULL;
-    if (!func->hasBody(def))
-        return true;
+    func->hasBody(def);
+    // if (!func->hasBody(def))
+        // return true;
 
     SourceRange range = func->getSourceRange();
     int idx = isEnclosedInCle(range);
